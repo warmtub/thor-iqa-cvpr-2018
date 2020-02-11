@@ -30,7 +30,7 @@ class PersonGameState(object):
                 self.datasets.append([])
 
             # test data
-            data_file = os.path.join('questions', constants.TEST_SET, 'data' + '_' + question_type, 'combined.csv')
+            data_file = os.path.join('questions', 'val', constants.TEST_SET, 'data' + '_' + question_type, 'combined.csv')
             if qq in constants.USED_QUESTION_TYPES:
                 dataset = [line.strip().split(',') for line in open(data_file)][1:]
                 self.test_datasets.append(dataset)

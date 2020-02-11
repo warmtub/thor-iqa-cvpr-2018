@@ -318,7 +318,7 @@ class QuestionGameState(GameState):
                 self.datasets.append([])
 
             # test data
-            path = prefix + constants.TEST_SET + '/data' + '_' + question_type
+            path = prefix + 'val/' + constants.TEST_SET + '/data' + '_' + question_type
             print('path', path)
             data_file = sorted(glob.glob(path + '/*.h5'), key=os.path.getmtime)
             if len(data_file) > 0 and qq in constants.USED_QUESTION_TYPES:

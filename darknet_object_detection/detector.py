@@ -31,7 +31,8 @@ class ObjectDetector(object):
         self.count += 1
 
         start = time.time()
-        results = dn.detect_numpy(self.net, self.meta, image, thresh=confidence_threshold)
+        #results = dn.detect_numpy(self.net, self.meta, image, thresh=confidence_threshold)
+        results = dn.detect(self.net, self.meta, image, thresh=confidence_threshold)
 
         if len(results) > 0:
             classes, scores, boxes = zip(*results)

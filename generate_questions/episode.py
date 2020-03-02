@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 
+#from utils import game_util_gibson as game_util
 from utils import game_util
 
 
@@ -41,6 +42,7 @@ class Episode(object):
                                 render_depth_image=False,
                                 render_class_image=False,
                                 render_object_image=True)
+        print ("what is event?", event.metadata['objects'])
         self.object_id_to_object_class = {
             obj['objectId']: obj['objectType'] for obj in event.metadata['objects']
         }

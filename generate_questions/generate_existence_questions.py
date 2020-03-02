@@ -6,6 +6,7 @@ import random
 import numpy as np
 import h5py
 import multiprocessing
+#from utils import game_util_gibson as game_util
 from utils import game_util
 from utils import py_util
 from graph import graph_obj
@@ -15,7 +16,7 @@ import constants
 
 all_object_classes = constants.QUESTION_OBJECT_CLASS_LIST
 
-DEBUG = False
+DEBUG = True
 if DEBUG:
     PARALLEL_SIZE = 1
 else:
@@ -38,6 +39,7 @@ def main(dataset_type):
     else:
         raise Exception('No test set found')
     num_record = int(num_samples_per_scene * np.ceil(num_questions_per_scene * 1.0 / num_samples_per_scene) * len(scene_numbers))
+    print ()
 
     assert(num_samples_per_scene % 4 == 0)
 
@@ -63,7 +65,7 @@ def main(dataset_type):
             scene_number += 1
             scene_num = scene_numbers[scene_number % len(scene_numbers)]
 
-            scene_name = 'FloorPlan%d' % scene_num
+            scene_name = scene_num
             episode.initialize_scene(scene_name)
             num_tries = 0
             while k < num_samples_per_scene and num_tries < 10 * num_samples_per_scene:

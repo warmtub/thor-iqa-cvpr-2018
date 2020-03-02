@@ -2,10 +2,28 @@
 import pdb
 import numpy as np
 import cv2
-from ai2thor import controller
+import gibson2
+from gibson2.core.simulator import Simulator
+from gibson2.core.physics.scene import BuildingScene
+from gibson2.core.physics.robot_locomotors import Turtlebot
+from gibson2.utils.utils import parse_config
 from utils import bb_util
 
 import constants
+
+QUALITY_SETTINGS = {
+    'DONOTUSE': 0,
+    'Very Low': 128,
+    'Low': 128,
+    'Medium': 256,
+    'MediumCloseFitShadows': 256,
+    'High': 512,
+    'Very High': 512,
+    'Ultra': 512,
+    'High WebGL': 512,
+}
+with open('config/scene_name.txt', 'r') as f:
+    SCENE_NAME = [line.strip() for line in f]
 
 
 def create_env(x_display=constants.X_DISPLAY,
@@ -13,12 +31,20 @@ def create_env(x_display=constants.X_DISPLAY,
                player_screen_height=constants.SCREEN_HEIGHT,
                player_screen_width=constants.SCREEN_WIDTH):
     print('Creating env')
-    env = controller.Controller(quality=quality)
-    print('Starting env, if this takes more than a few seconds (except for downloading the build), the display is not set correctly')
-    env.start(x_display=x_display,
-              player_screen_height=player_screen_height,
-              player_screen_width=player_screen_width)
+    config = parse_config('config/turtlebot_p2p_nav.yaml')
+    env = Simulator(mode='gui', resolution=QUALITY_SETTINGS[quality])
+    #scene = BuildingScene('Ohoopee')
+    #env.import_scene(scene)
+    #turtlebot = Turtlebot(config)
+    #env.import_robot(turtlebot)
+    
+    #print('Starting env, if this takes more than a few seconds (except for downloading the build), the display is not set correctly')
+    #env.start(x_display=x_display,
+    #          player_screen_height=player_screen_height,
+    #          player_screen_width=player_screen_width)
+    
     print('Done starting env')
+
     return env
 
 
@@ -32,20 +58,17 @@ def reset(env, scene_name_or_num,
     if type(scene_name_or_num) == str:
         scene_name = scene_name_or_num
     else:
-        scene_name = 'FloorPlan%d' % scene_name_or_num
-
-    env.reset(scene_name)
-    event = env.step(dict(
-        action='Initialize',
-        gridSize=grid_size,
-        cameraY=camera_y,
-        renderImage=render_image,
-        renderDepthImage=render_depth_image,
-        renderClassImage=render_class_image,
-        renderObjectImage=render_object_image))
+        scene_name = SCENE_NAME[scene_name_or_num]
+    print(scene_name)
+    event = env.reload()
+    config = parse_config('config/turtlebot_p2p_nav.yaml')
+    scene = BuildingScene(scene_name)
+    env.import_scene(scene)
+    turtlebot = Turtlebot(config)
+    env.import_robot(turtlebot)
     return event
 
-
+"""
 def distance(state1, state2):
     # Manhattan distance plus rotational equality.
     rot_diff_y = abs(state1[1]['y'] - state2[1]['y']) / 90.0
@@ -280,3 +303,4 @@ def set_open_close_object(action, last_event):
             # Nothing to open
             action['objectId'] = ''
     return action
+"""

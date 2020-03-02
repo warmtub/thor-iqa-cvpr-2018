@@ -12,7 +12,7 @@ import os
 #   - end_to_end_baseline: run the A3C style agent
 TASK = 'rl'
 DEBUG = False
-EVAL = False
+EVAL = True
 
 
 ########################################################################################################################
@@ -168,7 +168,7 @@ else:
     DARKNET_GPU = 1
     TRAIN = False
     DRAWING = False
-    PARALLEL_SIZE = 8
+    PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -246,9 +246,9 @@ MAX_DEPTH = 5000
 PREDICT_DEPTH_SLOPE = 1.1885502493692868   # Computed multiplicative bias for depth prediction network
 PREDICT_DEPTH_INTERCEPT = 228.55248115021686 # Computed bias for depth prediction network
 
-TRAIN_SCENE_NUMBERS = list(range(6, 31))
+TRAIN_SCENE_NUMBERS = list(range(101, 572))
 
-TEST_SCENE_NUMBERS = list(range(1, 6))
+TEST_SCENE_NUMBERS = list(range(1, 101))
 
 SCENE_NUMBERS = TRAIN_SCENE_NUMBERS if not EVAL else TEST_SCENE_NUMBERS
 

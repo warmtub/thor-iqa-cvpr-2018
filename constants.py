@@ -11,8 +11,8 @@ import os
 #   - rl: use the rl controller
 #   - end_to_end_baseline: run the A3C style agent
 TASK = 'rl'
-DEBUG = False
-EVAL = False
+DEBUG = True
+EVAL = True
 
 
 ########################################################################################################################
@@ -158,7 +158,7 @@ elif not EVAL:
         PARALLEL_SIZE = 2
     else:
         GPU_ID = '0'
-        PARALLEL_SIZE = 8
+        PARALLEL_SIZE = 2
     TRAIN = True
     DRAWING = False
     RUN_TEST = False
@@ -168,7 +168,7 @@ else:
     DARKNET_GPU = 1
     TRAIN = False
     DRAWING = False
-    PARALLEL_SIZE = 8
+    PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -360,3 +360,6 @@ MAX_COUNTING_ANSWER = 3
 
 np.set_printoptions(precision=4)
 np.set_printoptions(suppress=True)
+
+# Object oriented semantic map
+RANDOM_SIMULATION_TIME = 3

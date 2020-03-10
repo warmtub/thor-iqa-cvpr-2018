@@ -1,5 +1,6 @@
 """A wrapper for engaging with the THOR environment."""
 import random
+from PIL import Image
 
 import numpy as np
 
@@ -77,6 +78,14 @@ class Episode(object):
         print('# Openable object_classes:', len(
             self.openable_receptacle_classes))
         self.agent_height = event.metadata['agent']['position']['y']
+
+    def get_env_top_view(self):
+        #print(self.event.metadata['thirdPartyCameras'])
+        event = game_util.get_top_view(self.env)
+        #im = Image.fromarray(event.third_party_camera_frames[0])
+        #im.save(os.path.join("~/code", "top_view.jpg"))
+
+        return self.event
 
     def initialize_episode(self, scene_seed=None, agent_seed=None, max_num_repeats=10, remove_prob=0.25):
         """Initializes environment with given scene and random seed."""

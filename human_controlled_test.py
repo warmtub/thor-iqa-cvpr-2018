@@ -54,6 +54,7 @@ class PersonGameState(object):
         self.question_type_ind = question_type_ind
 
         self.scene_name = 'FloorPlan%d' % self.scene_num
+        print ("scene name: ", self.scene_name)
         grid_file = 'layouts/%s-layout.npy' % self.scene_name
         self.points = (np.load(grid_file) * 1.0 / constants.AGENT_STEP_SIZE).astype(int)
 

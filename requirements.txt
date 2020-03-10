@@ -4,7 +4,7 @@ Pillow
 numpy==1.14.2
 opencv-python
 pyyaml
-scipy
+scipy==1.0.0
 h5py
 invoke
 requests

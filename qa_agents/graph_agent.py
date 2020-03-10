@@ -234,7 +234,7 @@ class GraphAgent(object):
         state_image = self.game_state.draw_state().copy()
         memory_map = np.flipud(self.game_state.graph.memory.copy())
         memory_map = np.concatenate((memory_map[:, :, [0]], np.zeros(memory_map[:, :,[0]].shape), memory_map[:, :, 1:]), axis=2)
-
+        print ("memory_map shape: ", memory_map.shape)
         images = [
                 curr_image,
                 state_image,

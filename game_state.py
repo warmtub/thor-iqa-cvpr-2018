@@ -98,6 +98,7 @@ class GameState(object):
                 scores = []
                 class_names = []
                 masks = []
+                #print("item: ", self.event.class_masks.items())
                 for (k, v) in self.event.class_masks.items():
                     if k in constants.OBJECT_CLASS_TO_ID and len(v) > 0:
                         scores.append(1)
@@ -112,6 +113,7 @@ class GameState(object):
                         for box in self.event.class_detections2D[cls]:
                             self.detection_mask_image[box[1]:box[3] + 1, box[0]:box[2] + 1, constants.OBJECT_CLASS_TO_ID[cls]] = 1
 
+            #print ("masks: ", masks)
             if constants.RENDER_DEPTH_IMAGE or constants.PREDICT_DEPTH:
                 xzy = game_util.depth_to_world_coordinates(self.s_t_depth, self.pose, self.camera_height / constants.AGENT_STEP_SIZE)
                 max_depth_mask = self.s_t_depth >= constants.MAX_DEPTH
@@ -136,6 +138,7 @@ class GameState(object):
 
                     curr_score = self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1]
 
+                    #print("curr_score: ", curr_score)
                     avg_locs = np.logical_and(curr_score > 0, curr_score < 1)
                     curr_score[avg_locs] = curr_score[avg_locs] * .5 + score[avg_locs] * .5
                     curr_score[curr_score == 0] = score[curr_score == 0]

@@ -98,7 +98,8 @@ class Episode(object):
                                 render_depth_image=False,
                                 render_class_image=False,
                                 render_object_image=True)
-        self.event = self.env.random_initialize(random_seed=scene_seed, max_num_repeats=max_num_repeats, remove_prob=remove_prob)
+        #self.event = self.env.random_initialize(random_seed=scene_seed, max_num_repeats=max_num_repeats, remove_prob=remove_prob)
+        self.event = self.env.step(action='InitialRandomSpawn', randomSeed=scene_seed)
         self.agent_height = self.event.metadata['agent']['position']['y']
 
         self.is_initialized = True

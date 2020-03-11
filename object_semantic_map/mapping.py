@@ -12,11 +12,21 @@ from utils import game_util
 from generate_questions.episode import Episode
 from graph import graph_obj
 
+import copy
+import math
+from PIL import Image, ImageDraw
+from ai2thor.controller import Controller
 
 #np.set_printoptions(threshold=sys.maxsize)
 
 DEBUG = True
 SIM_TIMES = constants.RANDOM_SIMULATION_TIME
+
+def get_agent_map_data(c: Controller):
+    c.step({"action": "ToggleMapView"})
+    frame = c.last_event.frame
+    c.step({"action": "ToggleMapView"})
+    return frame
 
 def main():
     scene_numbers = constants.TRAIN_SCENE_NUMBERS
@@ -24,7 +34,7 @@ def main():
             
     def create_dump():
         episode = Episode()
-        i = 2
+        i = 0
         #for i in range(len(scene_numbers)):
         while i > -1: 
             scene_name = 'FloorPlan%d' % scene_numbers[i]
@@ -74,12 +84,19 @@ def main():
                 ax.set_title(constants.OBJECTS[obj_id])
                 ax.axis('off')
             
+            gs = axs[0, 0].get_gridspec()
+            for ax in axs[:,:2].flatten():
+                ax.remove()
+            ax_frame = fig.add_subplot(gs[:,:2])
+            ax_frame.axis('off')
+            
+            new_frame = get_agent_map_data(episode.env)
+            new_frame = new_frame[:,::-1]
+            new_frame = np.rot90(new_frame, -1)
+            plt.imshow(new_frame)
             #fig.tight_layout()
-            fig.colorbar(pcm, ax=axs[:])
+            #fig.colorbar(pcm, ax=axs[:])
             plt.show()
-
-            
-            
 
             """
             objs = [obj['objectType'] for obj in episode.get_objects()]

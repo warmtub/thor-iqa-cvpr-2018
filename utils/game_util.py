@@ -16,8 +16,8 @@ def create_env(x_display=constants.X_DISPLAY,
     env = controller.Controller(quality=quality)
     print('Starting env, if this takes more than a few seconds (except for downloading the build), the display is not set correctly')
     env.start(x_display=x_display,
-              player_screen_height=player_screen_height,
-              player_screen_width=player_screen_width)
+              height=player_screen_height,
+              width=player_screen_width)
     print('Done starting env')
     return env
 

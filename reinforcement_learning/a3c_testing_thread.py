@@ -43,12 +43,13 @@ class A3CTestingThread(object):
         terminal = False
         episode_reward = 0
 
-        print('Resetting ')
+        print('Resetting')
         self.prev_action = {'action' : 'Reset'}
         self.agent.reset(seed=test_ind[0], test_ind=test_ind)
         scene_num = self.agent.game_state.scene_num
         scene_seed = self.agent.game_state.scene_seed
         required_interaction = self.agent.game_state.requires_interaction
+
 
         while not terminal and self.agent.num_steps <= constants.MAX_EPISODE_LENGTH:
             self.local_t += 1
@@ -77,6 +78,7 @@ class A3CTestingThread(object):
                 print('terminal', terminal)
 
             episode_reward += reward
+
 
         if constants.DRAWING:
             self.agent.inference()

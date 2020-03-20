@@ -11,7 +11,7 @@ import os
 #   - rl: use the rl controller
 #   - end_to_end_baseline: run the A3C style agent
 TASK = 'rl'
-DEBUG = True
+DEBUG = False
 EVAL = True
 
 
@@ -37,7 +37,8 @@ USE_POSSIBLE_PRIOR = True
 OBJECT_DETECTION = True
 GT_OBJECT_DETECTION = False
 
-USED_QUESTION_TYPES = {0, 1, 2}
+#USED_QUESTION_TYPES = {0, 1, 2}
+USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
 
@@ -167,7 +168,8 @@ else:
     GPU_ID = '0'
     DARKNET_GPU = 1
     TRAIN = False
-    DRAWING = False
+    DRAWING = True
+    PARALLEL_SIZE = 1
     PARALLEL_SIZE = 2
 
 
@@ -362,4 +364,6 @@ np.set_printoptions(precision=4)
 np.set_printoptions(suppress=True)
 
 # Object oriented semantic map
+RANDOM_BY_SCENE = False
+RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3

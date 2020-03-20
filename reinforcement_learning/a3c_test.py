@@ -4,18 +4,20 @@ import tensorflow as tf
 import os
 import threading
 import numpy as np
+import h5py
+import glob
 
 import random
 
 from networks.qa_planner_network import QAPlannerNetwork
 from networks.free_space_network import FreeSpaceNetwork
 from networks.end_to_end_baseline_network import EndToEndBaselineNetwork
-from reinforcement_learning.a3c_testing_thread import A3CTestingThread
+from reinforcement_learning.a3c_testing_thread import A3CTestingThread 
 from utils import tf_util
 from utils import py_util
 
 import constants
-
+np.set_printoptions(threshold=np.inf)
 
 def main():
     if constants.OBJECT_DETECTION:
@@ -70,10 +72,13 @@ def main():
     rows = []
     for q_type in question_types:
         curr_rows = list(range(len(testing_thread.agent.game_state.test_datasets[q_type])))
-        #curr_rows = list(range(8))
         rows.extend(list(zip(curr_rows, [q_type] * len(curr_rows))))
 
-    random.shuffle(rows)
+    #random.seed(999)
+    if constants.RANDOM_BY_SCENE:
+        rows = shuffle_by_scene(rows)
+    else:
+        random.shuffle(rows)
 
     answers_correct = []
     ep_lengths = []
@@ -130,6 +135,43 @@ def main():
 
     out_file.close()
 
+def shuffle_by_scene(rows):
+    #test_data
+    question_types = ['existence', 'counting', 'contains']
+    test_datasets = []
+    for qq,question_type in enumerate(question_types):
+        prefix = 'questions/'
+        path = prefix + 'val/' + constants.TEST_SET + '/data' + '_' + question_type
+        #print('path', path)
+        data_file = sorted(glob.glob(path + '/*.h5'), key=os.path.getmtime)
+        if len(data_file) > 0 and qq in constants.USED_QUESTION_TYPES:
+            dataset = h5py.File(data_file[-1])
+            dataset_np = dataset['questions/question'][...]
+            dataset.close()
+            test_dataset = dataset_np
+            sums = np.sum(np.abs(test_dataset), axis=1)
+            test_datasets.append(test_dataset[sums > 0])
+            print('Type', question_type, 'test num_questions', test_datasets[-1].shape)
+        else:
+            test_datasets.append([])
+
+    rows_np = np.empty((0, 3), int)
+    for question_row, question_type_ind in rows:
+        scene_num = test_datasets[question_type_ind][question_row, :][0]
+        
+        #print ("data: ",question_row, question_type_ind,scene_num)
+        rows_np = np.concatenate((rows_np, [[question_row, question_type_ind, scene_num]]))
+    
+    rows_np = rows_np[rows_np[:,2].argsort()]
+    #print ("rows_np: ",rows_np.shape)
+    #print (rows_np)
+
+    for i in np.unique(rows_np[:,2]):
+        mask = np.where(rows_np[:,2] == i)
+        print(mask)
+        rows_np[mask] = np.random.permutation(rows_np[mask])
+
+    return list(rows_np[:, :2])
 
 if __name__ == '__main__':
     main()

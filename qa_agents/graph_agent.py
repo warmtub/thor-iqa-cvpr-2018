@@ -234,7 +234,6 @@ class GraphAgent(object):
         state_image = self.game_state.draw_state().copy()
         memory_map = np.flipud(self.game_state.graph.memory.copy())
         memory_map = np.concatenate((memory_map[:, :, [0]], np.zeros(memory_map[:, :,[0]].shape), memory_map[:, :, 1:]), axis=2)
-        print ("memory_map shape: ", memory_map.shape)
         images = [
                 curr_image,
                 state_image,
@@ -365,6 +364,9 @@ class RLGraphAgent(QAAgent):
             else:
                 answer = np.argmax(self.answer)
 
+            print("answer:", answer)
+            print("self.game_state.answer:", self.game_state.answer)
+            print("self.game_state.can_end:", self.game_state.can_end)
             if answer == self.game_state.answer and self.game_state.can_end:
                 self.reward = 10
                 print('Answer correct!!!!!')
@@ -733,4 +735,3 @@ class RLGraphAgent(QAAgent):
         cv2.imwrite('visualizations/images/state_%05d.jpg' % self.global_step_id, image[:, :, ::-1])
 
         return image
-

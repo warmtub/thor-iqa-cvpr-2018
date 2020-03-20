@@ -86,7 +86,7 @@ def restore(session, save_file, raise_if_not_found=False):
     restore_vars = []
     restored_var_names = set()
     restored_var_new_shape = []
-    print('Restoring:')
+    #print('Restoring:')
     with tf.variable_scope(tf.get_variable_scope(), reuse=True):
         for var_name, saved_var_name in var_names:
             if 'global_step' in var_name:
@@ -96,8 +96,8 @@ def restore(session, save_file, raise_if_not_found=False):
             var_shape = curr_var.get_shape().as_list()
             if var_shape == saved_shapes[saved_var_name]:
                 restore_vars.append(curr_var)
-                print(str(saved_var_name) + ' -> \t' + str(var_shape) + ' = ' +
-                      str(int(np.prod(var_shape) * 4 / 10**6)) + 'MB')
+                #print(str(saved_var_name) + ' -> \t' + str(var_shape) + ' = ' +
+                #      str(int(np.prod(var_shape) * 4 / 10**6)) + 'MB')
                 restored_var_names.add(saved_var_name)
             else:
                 print('Shape mismatch for var', saved_var_name, 'expected', var_shape,

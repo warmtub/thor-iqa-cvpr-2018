@@ -62,6 +62,7 @@ class GameState(object):
 
                 t_start = time.time()
                 boxes, scores, class_names = self.object_detector.detect(game_util.imresize(self.event.frame, (608, 608), rescale=False))
+                #print ("detection score: ", scores)
                 self.times[1, 0] += time.time() - t_start
                 self.times[1, 1] += 1
                 if self.times[1, 1] % 100 == 0:
@@ -76,7 +77,10 @@ class GameState(object):
                         mask_dict[class_name][box[1]:box[3] + 1, box[0]:box[2] + 1] += score
                         used_inds.append(ii)
                 mask_dict = {k : np.minimum(v, 1) for k,v in mask_dict.items()}
+                #print ("mask_dict: ", mask_dict.items())
+                #print ("mask_dict: ", mask_dict)
                 used_inds = np.array(used_inds)
+                #print ("used_inds: ", used_inds)
                 if len(used_inds) > 0:
                     boxes = boxes[used_inds]
                     scores = scores[used_inds]
@@ -113,7 +117,9 @@ class GameState(object):
                         for box in self.event.class_detections2D[cls]:
                             self.detection_mask_image[box[1]:box[3] + 1, box[0]:box[2] + 1, constants.OBJECT_CLASS_TO_ID[cls]] = 1
 
-            #print ("masks: ", masks)
+            #print ("masks len: ", len(masks))
+            #if len(masks)>0:
+            #    print ("masks: ", masks[0].shape)
             if constants.RENDER_DEPTH_IMAGE or constants.PREDICT_DEPTH:
                 xzy = game_util.depth_to_world_coordinates(self.s_t_depth, self.pose, self.camera_height / constants.AGENT_STEP_SIZE)
                 max_depth_mask = self.s_t_depth >= constants.MAX_DEPTH
@@ -138,10 +144,12 @@ class GameState(object):
 
                     curr_score = self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1]
 
+                    #print("score: ", score)
                     #print("curr_score: ", curr_score)
                     avg_locs = np.logical_and(curr_score > 0, curr_score < 1)
                     curr_score[avg_locs] = curr_score[avg_locs] * .5 + score[avg_locs] * .5
                     curr_score[curr_score == 0] = score[curr_score == 0]
+                    #print("curr_score: ", curr_score)
                     self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
 
                     # inverse marked as empty
@@ -389,7 +397,14 @@ class QuestionGameState(GameState):
 
         self.question_type_ind = question_type_ind
 
+        if hasattr(self, 'scene_name'):
+            last_scene_name = self.scene_name
+            print ("scene_name before: ", last_scene_name)
+            self.scene_name = 'FloorPlan%d' % scene_num
+            if self.scene_name == last_scene_name:
+                print ("same as last scene")
         self.scene_name = 'FloorPlan%d' % scene_num
+        print ("scene_name after: ", self.scene_name)
         grid_file = 'layouts/%s-layout.npy' % self.scene_name
         self.graph = graph_obj.Graph(grid_file, use_gt=False)
         self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
@@ -639,4 +654,3 @@ class QuestionGameState(GameState):
 
         else:
             self.reward -= 0.05
-

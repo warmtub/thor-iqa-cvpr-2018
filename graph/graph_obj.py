@@ -11,7 +11,7 @@ EPSILON = 1e-7
 
 
 class Graph(object):
-    def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
+    def __init__(self, gt_source_file, use_gt=False, construct_graph=True, memory=None):
         self.points = (np.load(gt_source_file) * 1.0 / constants.AGENT_STEP_SIZE).astype(int)
         self.xMin = self.points[:, 0].min() - constants.SCENE_PADDING * 2
         self.yMin = self.points[:, 1].min() - constants.SCENE_PADDING * 2
@@ -19,9 +19,12 @@ class Graph(object):
         self.yMax = self.points[:, 1].max() + constants.SCENE_PADDING * 2
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
-        self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES),
+        if memory:
+            self.memory = memory
+        else:
+            self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES),
                                dtype=np.float32)
-        self.memory[:, :, 0] = 1
+            self.memory[:, :, 0] = 1
         self.construct_graph = construct_graph
         for yy in np.arange(self.yMin, self.yMax + 1):
             for xx in np.arange(self.xMin, self.xMax + 1):

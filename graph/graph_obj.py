@@ -11,7 +11,7 @@ EPSILON = 1e-7
 
 
 class Graph(object):
-    def __init__(self, gt_source_file, use_gt=False, construct_graph=True, memory=None):
+    def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
         self.points = (np.load(gt_source_file) * 1.0 / constants.AGENT_STEP_SIZE).astype(int)
         self.xMin = self.points[:, 0].min() - constants.SCENE_PADDING * 2
         self.yMin = self.points[:, 1].min() - constants.SCENE_PADDING * 2
@@ -19,6 +19,7 @@ class Graph(object):
         self.yMax = self.points[:, 1].max() + constants.SCENE_PADDING * 2
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
+<<<<<<< HEAD
         if memory is not None:
             print(memory)
             self.memory = 0.5 * memory
@@ -26,7 +27,13 @@ class Graph(object):
             self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES),
                                dtype=np.float32)
             self.memory[:, :, 0] = 1
+=======
+        self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES),
+                            dtype=np.float32)
+        self.memory[:, :, 0] = 1
+>>>>>>> 26448a7f19465c260637e0d79d6fee47c465a925
         self.construct_graph = construct_graph
+        self.count = 0
         for yy in np.arange(self.yMin, self.yMax + 1):
             for xx in np.arange(self.xMin, self.xMax + 1):
                 if use_gt:
@@ -216,3 +223,13 @@ class Graph(object):
         new_pose[0] -= self.xMin
         new_pose[1] -= self.yMin
         return tuple(new_pose.tolist())
+
+    def memory_decay(self):
+        #print (self.memory)
+        self.count += 1
+        np.save('%d' % self.count, self.memory)
+        if self.count > 10:
+            exit()
+        mask = np.where(self.memory < 1)
+        
+        self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR

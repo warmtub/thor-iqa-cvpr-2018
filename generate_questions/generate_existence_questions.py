@@ -64,6 +64,7 @@ def main(dataset_type):
             scene_num = scene_numbers[scene_number % len(scene_numbers)]
 
             scene_name = 'FloorPlan%d' % scene_num
+            print("scene_name: ", scene_name)
             episode.initialize_scene(scene_name)
             num_tries = 0
             while k < num_samples_per_scene and num_tries < 10 * num_samples_per_scene:

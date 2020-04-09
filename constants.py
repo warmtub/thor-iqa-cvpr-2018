@@ -37,7 +37,7 @@ USE_POSSIBLE_PRIOR = True
 OBJECT_DETECTION = True
 GT_OBJECT_DETECTION = False
 
-#USED_QUESTION_TYPES = {0, 1, 2}
+#USED_QUESTION_TYPES = {1, 2}
 USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
@@ -367,3 +367,4 @@ np.set_printoptions(suppress=True)
 RANDOM_BY_SCENE = False
 RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
+MAP_FACTOR = 0.1

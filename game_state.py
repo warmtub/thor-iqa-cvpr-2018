@@ -397,17 +397,20 @@ class QuestionGameState(GameState):
 
         self.question_type_ind = question_type_ind
 
+        last_scene_name = ""
         if hasattr(self, 'scene_name'):
             last_scene_name = self.scene_name
             print ("scene_name before: ", last_scene_name)
-            self.scene_name = 'FloorPlan%d' % scene_num
-            if self.scene_name == last_scene_name:
-                print ("same as last scene")
         self.scene_name = 'FloorPlan%d' % scene_num
-        print ("scene_name after: ", self.scene_name)
         grid_file = 'layouts/%s-layout.npy' % self.scene_name
-        self.graph = graph_obj.Graph(grid_file, use_gt=False)
-        self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
+        if self.scene_name == last_scene_name:
+            self.graph.memory_decay()
+            print ("same as last scene")
+        else:
+            self.graph = graph_obj.Graph(grid_file, use_gt=False)
+            self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
+        print ("scene_name after: ", self.scene_name)
+        
 
         self.bounds = [self.graph.xMin, self.graph.yMin,
             self.graph.xMax - self.graph.xMin + 1,

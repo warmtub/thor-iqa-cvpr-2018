@@ -160,15 +160,16 @@ def shuffle_by_scene(rows):
         scene_num = test_datasets[question_type_ind][question_row, :][0]
         
         #print ("data: ",question_row, question_type_ind,scene_num)
+        if scene_num == 5:
+            continue
         rows_np = np.concatenate((rows_np, [[question_row, question_type_ind, scene_num]]))
     
     rows_np = rows_np[rows_np[:,2].argsort()]
-    #print ("rows_np: ",rows_np.shape)
+    print ("rows_np: ",rows_np.shape)
     #print (rows_np)
 
     for i in np.unique(rows_np[:,2]):
         mask = np.where(rows_np[:,2] == i)
-        print(mask)
         rows_np[mask] = np.random.permutation(rows_np[mask])
 
     return list(rows_np[:, :2])

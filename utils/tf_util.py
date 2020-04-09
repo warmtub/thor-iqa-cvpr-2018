@@ -203,4 +203,4 @@ def l2_regularizer():
 
 
 def Session():
-    return tf.Session(config=tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True), allow_soft_placement=True))
+    return tf.Session(config=tf.ConfigProto(gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction = 0.8, allow_growth=True), allow_soft_placement=True))

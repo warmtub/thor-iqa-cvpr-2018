@@ -161,8 +161,7 @@ def shuffle_by_scene(rows):
         
         #print ("data: ",question_row, question_type_ind,scene_num)
         if scene_num == 5:
-            continue
-        rows_np = np.concatenate((rows_np, [[question_row, question_type_ind, scene_num]]))
+            rows_np = np.concatenate((rows_np, [[question_row, question_type_ind, scene_num]]))
     
     rows_np = rows_np[rows_np[:,2].argsort()]
     print ("rows_np: ",rows_np.shape)

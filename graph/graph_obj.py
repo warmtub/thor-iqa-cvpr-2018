@@ -23,7 +23,6 @@ class Graph(object):
                             dtype=np.float32)
         self.memory[:, :, 0] = 1
         self.construct_graph = construct_graph
-        self.count = 0
         for yy in np.arange(self.yMin, self.yMax + 1):
             for xx in np.arange(self.xMin, self.xMax + 1):
                 if use_gt:
@@ -216,10 +215,6 @@ class Graph(object):
 
     def memory_decay(self):
         #print (self.memory)
-        self.count += 1
-        np.save('%d' % self.count, self.memory)
-        if self.count > 10:
-            exit()
         mask = np.where(self.memory < 1)
         
         self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR

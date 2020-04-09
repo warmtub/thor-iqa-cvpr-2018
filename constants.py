@@ -367,9 +367,4 @@ np.set_printoptions(suppress=True)
 RANDOM_BY_SCENE = False
 RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
-<<<<<<< HEAD
-
-LOG_FILE_PATH = "/home/warmtub/code/thor-iqa-cvpr-2018/logs/train/rl_det_q_in_a_nav_upp/usable"
-=======
 MAP_FACTOR = 0.1
->>>>>>> 26448a7f19465c260637e0d79d6fee47c465a925

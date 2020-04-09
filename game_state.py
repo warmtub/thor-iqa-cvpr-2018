@@ -397,30 +397,12 @@ class QuestionGameState(GameState):
 
         self.question_type_ind = question_type_ind
 
-<<<<<<< HEAD
-        prev_memory = None
-        if hasattr(self, 'scene_name'):
-            last_scene_name = self.scene_name
-            print ("scene_name before: ", last_scene_name)
-            self.scene_name = 'FloorPlan%d' % scene_num
-            if self.scene_name == last_scene_name:
-                print ("same as last scene")
-                #prev_memory = self.graph
-=======
         last_scene_name = ""
         if hasattr(self, 'scene_name'):
             last_scene_name = self.scene_name
             print ("scene_name before: ", last_scene_name)
->>>>>>> 26448a7f19465c260637e0d79d6fee47c465a925
         self.scene_name = 'FloorPlan%d' % scene_num
         grid_file = 'layouts/%s-layout.npy' % self.scene_name
-<<<<<<< HEAD
-        if hasattr(self, 'graph'):
-            print ("before: ", self.graph)
-        self.graph = graph_obj.Graph(grid_file, use_gt=False, memory=prev_memory)
-        print ("after:  ", self.graph)
-        self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
-=======
         if self.scene_name == last_scene_name:
             self.graph.memory_decay()
             print ("same as last scene")
@@ -429,7 +411,6 @@ class QuestionGameState(GameState):
             self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
         print ("scene_name after: ", self.scene_name)
         
->>>>>>> 26448a7f19465c260637e0d79d6fee47c465a925
 
         self.bounds = [self.graph.xMin, self.graph.yMin,
             self.graph.xMax - self.graph.xMin + 1,

@@ -170,10 +170,6 @@ def shuffle_by_scene(rows):
 
     for i in np.unique(rows_np[:,2]):
         mask = np.where(rows_np[:,2] == i)
-<<<<<<< HEAD
-        #print(mask)
-=======
->>>>>>> 26448a7f19465c260637e0d79d6fee47c465a925
         rows_np[mask] = np.random.permutation(rows_np[mask])
 
     return list(rows_np[:, :2])

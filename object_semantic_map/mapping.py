@@ -1,10 +1,14 @@
 import random
 import itertools
 import numpy as np
+import argparse
 #import sys
 from matplotlib import pyplot as plt
 from matplotlib import colors
 
+parser = argparse.ArgumentParser()
+parser.add_argument("fig", type=str, help="save figure path")
+args = parser.parse_args()
 
 import constants
 from utils import drawing
@@ -51,21 +55,23 @@ def main():
             #episode.initialize_episode(scene_seed=scene_seed)  # randomly initialize the scene
             
             memory = np.zeros((graph.yMax - graph.yMin + 1, graph.xMax - graph.xMin + 1, 1 + constants.NUM_CLASSES))
-            print (memory.shape)
+            #print (memory.shape)
             
             for _ in range(SIM_TIMES):
                 scene_seed = random.randint(0, 999999999)
                 episode.initialize_episode(scene_seed=scene_seed)
+                memory = memory * 0.5
                 for obj in episode.get_objects():
                     if obj['objectType'] not in constants.OBJECTS:
                         continue
                     y, x = game_util.get_object_point(obj, scene_bounds)
                     #print("object %s at " % obj['objectType'], game_util.get_object_point(obj, scene_bounds))
                     obj_id = constants.OBJECT_CLASS_TO_ID[obj['objectType']]
-                    memory[y][x][obj_id] += 1
-            memory = np.divide(memory, SIM_TIMES)
+                    memory[y][x][obj_id] = 1
+            #memory = np.divide(memory, SIM_TIMES)
 
-            print (memory.shape[:2])
+            #memory[:,scene_bounds[4]-1,:] = 1
+            #print (memory.shape[:2])
             #print (constants.OBJECTS[test_id])
             #plt.figure(figsize=list(memory.shape[:2]))
             #plt.pcolor(memory[:,:,test_id],cmap=plt.get_cmap('Reds'), vmin=0.0, vmax=1.0)#,edgecolors='k', linewidths=1)
@@ -93,10 +99,12 @@ def main():
             new_frame = get_agent_map_data(episode.env)
             new_frame = new_frame[:,::-1]
             new_frame = np.rot90(new_frame, -1)
+            print(new_frame.shape)
             plt.imshow(new_frame)
             #fig.tight_layout()
             #fig.colorbar(pcm, ax=axs[:])
             plt.show()
+            #plt.savefig(args.fig)
 
             """
             objs = [obj['objectType'] for obj in episode.get_objects()]

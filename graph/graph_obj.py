@@ -19,8 +19,8 @@ class Graph(object):
         self.yMax = self.points[:, 1].max() + constants.SCENE_PADDING * 2
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
-        self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES),
-                            dtype=np.float32)
+        self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        self.freq_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.memory[:, :, 0] = 1
         self.construct_graph = construct_graph
         for yy in np.arange(self.yMin, self.yMax + 1):

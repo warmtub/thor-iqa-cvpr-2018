@@ -151,6 +151,12 @@ class GameState(object):
                     curr_score[curr_score == 0] = score[curr_score == 0]
                     #print("curr_score: ", curr_score)
                     self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.empty_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1])
+                    #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1].shape)
+                    if curr_score.any() > constants.FREQ_TH:
+                        self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
+                        self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
 
                     # inverse marked as empty
                     locations = xzy[np.logical_not(mask_locs), :2]
@@ -169,6 +175,11 @@ class GameState(object):
                     curr_score[replace_locs] = curr_score[replace_locs] * .8
                     self.graph.memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.empty_memory[locations[:, 1], locations[:, 0],
+                        constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    if curr_score.any() > constants.FREQ_TH:
+                        self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
+                        self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
             if constants.DRAWING:
                 if constants.GT_OBJECT_DETECTION:
                     boxes = []
@@ -520,6 +531,8 @@ class QuestionGameState(GameState):
         self.reward = 0
         self.end_point = []
 
+        self.early_stop = False
+
     def get_action(self, action_or_ind):
         teleport_failure = False
         should_fail = False
@@ -657,3 +670,56 @@ class QuestionGameState(GameState):
 
         else:
             self.reward -= 0.05
+
+    def get_current_iou(self, obj_ind, max_coverage):
+        #self.max_coverage
+        mem_mask = np.array(np.where(self.graph.memory[:, :, obj_ind] > pow(constants.MAP_FACTOR, 3)), dtype = int).T  # must explore
+        emp_mask = np.array(np.where(self.graph.empty_memory[:, :, 0] > 0), dtype = int).T  # exploration coverage of all
+        cov_mask = np.array(np.where(self.graph.empty_memory[:, :, obj_ind] > 0), dtype = int).T  # exploration coverage of target
+        
+
+        #print(np.array([mem_mask, emp_mask]))
+        #print (obj_ind)
+        #print ("orioirir and coverage", self.graph.freq_memory.shape, self.graph.empty_memory.shape, )
+        print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape, cov_mask.shape)
+        union = np.unique(np.concatenate((mem_mask, emp_mask), axis=0), axis=0)
+        #print ("union", union.shape)
+
+        #print(dtype)
+        #print ("freq_mem and coverage shape", mem_mask.shape, " ", emp_mask.shape)
+        #print ("freq_mem and coverage dtype", mem_mask.dtype, " ", emp_mask.dtype)
+        #print ("freq_mem and coverage dtype", mem_mask.dtype.itemsize, " ", emp_mask.dtype.itemsize)
+        #print ("nnew dtype", np.dtype([('', emp_mask.dtype)] * emp_mask.shape[-1]).itemsize)
+        #print ("nnew dtype", [('', emp_mask.dtype)] * emp_mask.shape[-1].itemsize)
+        #print ("neww dtype", np.dtype([('', mem_mask.dtype)] * mem_mask.shape[-1]).itemsize)
+        #print ("neww dtype", [('', mem_mask.dtype)] * mem_mask.shape[-1].itemsize)
+        #mem_mask.view(dtype)
+        #print(emp_mask)
+        #emp_mask.view(dtype)
+        #memm = mem_mask.view(dtype)
+        #empp = emp_mask.view(dtype)
+        #C = np.intersect1d(mem_mask.T.view(dtype).T, emp_mask.T.view(dtype).T)
+
+        # This last bit is optional if you're okay with "C" being a structured array...
+        #C = C.view(mem_mask.dtype).reshape(-1, ncols)
+        #print ("freq_mem and coverage tpe", mem_mask.dtype, " ", emp_mask.dtype)
+        #inter = multidim_intersect(mem_mask, emp_mask)
+        #print ("union and inter", union, " ")
+        mem_mask_set = set([tuple(x) for x in mem_mask])
+        emp_mask_set = set([tuple(x) for x in emp_mask])
+        inter = np.array([x for x in mem_mask_set & emp_mask_set])
+        #mem_maskv = mem_mask.view([('', mem_mask.dtype)] * mem_mask.shape[0])
+        
+        #print ("freq_memvv and coverage shapevv", mem_mask_set.shape, " ", mem_mask_set.shape)
+        #print ("freq_memvv and coverage shapevv", mem_maskv.dtype, " ", emp_maskv.dtype)
+        #C = np.intersect1d(mem_maskv, emp_maskv).view(mem_mask.dtype)
+
+        # This last bit is optional if you're okay with "C" being a structured array...
+        #C = C.astype(A.dtype).reshape(-1, ncols)
+
+
+
+        #print ("union and inter", union.shape, " ", inter.shape)
+
+        return union.shape[0], inter.shape[0], mem_mask.shape[0]
+

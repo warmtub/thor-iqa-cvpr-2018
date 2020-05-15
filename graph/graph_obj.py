@@ -20,9 +20,12 @@ class Graph(object):
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
         self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.freq_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.memory[:, :, 0] = 1
         self.construct_graph = construct_graph
+        self.index = 0
+        self.critical_points = []
         for yy in np.arange(self.yMin, self.yMax + 1):
             for xx in np.arange(self.xMin, self.xMax + 1):
                 if use_gt:
@@ -87,6 +90,7 @@ class Graph(object):
             print('\t\t\tgraph tested successfully')
 
     def update_graph(self, graph_patch, pose, rows):
+        #print("graph update at ", pose)
         graph_patch, curr_val = graph_patch
         curr_val = np.array(curr_val)
         # Rotate the array to get its global coordinate frame orientation.
@@ -105,6 +109,10 @@ class Graph(object):
         elif pose[2] == 3:
             xMin = pose[0] - constants.STEPS_AHEAD
             yMin = pose[1] - int(constants.STEPS_AHEAD / 2)
+        #print("update rows:", pose[1] - self.yMin, pose[0] - self.xMin)
+        #print("update rows:", yMin - self.yMin, yMin + constants.STEPS_AHEAD - self.yMin,
+        #            xMin - self.xMin, xMin + constants.STEPS_AHEAD - self.xMin)
+        #print("graph update at ", pose)
         if 0 in rows and self.construct_graph:
             for yi, yy in enumerate(range(yMin, yMin + constants.STEPS_AHEAD)):
                 for xi, xx in enumerate(range(xMin, xMin + constants.STEPS_AHEAD)):
@@ -112,11 +120,22 @@ class Graph(object):
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
             self.update_weight(pose[0], pose[1], curr_val[0])
         else:
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+
+        #self.freq_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+        #                 xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = 1.0
+        self.freq_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = 1.0
+        #print("update freq map")
 
     def get_graph_patch(self, pose):
         if pose[2] == 0:
@@ -149,6 +168,7 @@ class Graph(object):
                     node = (xx, yy, direction)
                     self.update_edge(node, weight)
         self.memory[yy - self.yMin, xx - self.xMin, 0] = weight
+        self.empty_memory[yy - self.yMin, xx - self.xMin, 0] = weight
 
     def update_edge(self, pose, weight):
         (xx, yy, direction) = pose
@@ -214,7 +234,16 @@ class Graph(object):
         return tuple(new_pose.tolist())
 
     def memory_decay(self):
+        #calculate criticals
+        
         #print (self.memory)
         mask = np.where(self.memory < 1)
+        #print(self.freq_memory)
+        #np.save('%d_memory.npy' % self.index, self.memory)
+        #np.save('%d_freq_memory.npy' % self.index, self.freq_memory)
         
         self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR
+        self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        self.freq_memory = self.freq_memory * 0.9
+
+        self.index = self.index +1

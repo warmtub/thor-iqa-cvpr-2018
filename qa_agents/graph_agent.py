@@ -179,6 +179,7 @@ class GraphAgent(object):
         if self.num_steps % 100 == 0:
             print('game state step time %.3f' % (self.times[1] / (self.num_steps + 1)))
         self.pose = self.game_state.pose
+        #print("agent at ", self.pose)
         self.action[:] = 0
         self.action[self.action_util.action_dict_to_ind(action)] = 1
         self.inference()
@@ -343,6 +344,11 @@ class RLGraphAgent(QAAgent):
     def get_reward(self):
         self.reward = self.game_state.reward
         self.reward += self.new_coverage * 1.0 / (constants.STEPS_AHEAD**2 + 1)
+
+        if self.game_state.early_stop:
+            print("Early stop triggered <<<<<<<<<<<<+")
+            self.terminal = True
+
         if constants.DEBUG:
             print('coverage %.2f - (%.3f%%)  reward %.3f' % (float(self.coverage), float(self.coverage * 100.0 / self.max_coverage), self.reward))
         if self.game_state.can_end and not self.prev_can_end:
@@ -478,7 +484,7 @@ class RLGraphAgent(QAAgent):
                 #(1 - self.spatial_map.memory[:, :, 5]) * (graph_obj.MAX_WEIGHT - graph_obj.EPSILON - 1)))
 
         else:
-            self.spatial_map.memory[:, :, 3] = self.game_state.graph.memory[:, :, 0] > 1
+            self.spatial_map.memory[:, :, 3] = self.game_state.graph.empty_memory[:, :, 0] > 1
             new_coverage = np.sum(self.spatial_map.memory[:, :, 3])
             self.new_coverage = new_coverage - self.coverage
             self.coverage = new_coverage
@@ -544,6 +550,18 @@ class RLGraphAgent(QAAgent):
                 self.nav_agent.inference()
 
             self.update_spatial_map(action)
+        
+        #check early stop here
+        target = 0
+        if self.game_state.question_type_ind == 0 or self.game_state.question_type_ind == 1:
+            target = self.game_state.question_target
+        elif self.game_state.question_type_ind == 2:
+            target = self.game_state.question_target[1]
+        else:
+            raise Exception('No matching question number')
+        union, inter, mem_cover = self.game_state.get_current_iou(target, self.max_coverage)
+        if mem_cover > 0 and inter/mem_cover > 0.9:
+            self.game_state.early_stop = True
 
         self.global_step_id += 1
 
@@ -735,3 +753,12 @@ class RLGraphAgent(QAAgent):
         cv2.imwrite('visualizations/images/state_%05d.jpg' % self.global_step_id, image[:, :, ::-1])
 
         return image
+
+    def get_current_target_iou(self):
+        if self.game_state.question_type_ind == 0 or self.game_state.question_type_ind == 1:
+            return self.game_state.get_current_iou(self.game_state.question_target, self.max_coverage)
+        elif self.game_state.question_type_ind == 2:
+            print("obj_inddd: ", self.game_state.question_target)
+            return self.game_state.get_current_iou(self.game_state.question_target[1], self.max_coverage)
+        else:
+            raise Exception('No matching question number')

@@ -38,8 +38,9 @@ OBJECT_DETECTION = True
 GT_OBJECT_DETECTION = False
 
 #USED_QUESTION_TYPES = {0, 1, 2}
-USED_QUESTION_TYPES = {1,2}
+#USED_QUESTION_TYPES = {1,2}
 #USED_QUESTION_TYPES = {2}
+USED_QUESTION_TYPES = {1}
 #USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
@@ -172,7 +173,7 @@ else:
     TRAIN = False
     DRAWING = False
     PARALLEL_SIZE = 1
-    PARALLEL_SIZE = 2
+    #PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -366,7 +367,8 @@ np.set_printoptions(precision=4)
 np.set_printoptions(suppress=True)
 
 # Object oriented semantic map
-RANDOM_BY_SCENE = False
 RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
-MAP_FACTOR = 1.0
+MAP_FACTOR = 0.2
+
+FREQ_TH = 0.5

@@ -39,8 +39,8 @@ GT_OBJECT_DETECTION = False
 
 #USED_QUESTION_TYPES = {0, 1, 2}
 #USED_QUESTION_TYPES = {1,2}
-#USED_QUESTION_TYPES = {2}
-USED_QUESTION_TYPES = {1}
+USED_QUESTION_TYPES = {2}
+#USED_QUESTION_TYPES = {1}
 #USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
@@ -172,8 +172,8 @@ else:
     DARKNET_GPU = 1
     TRAIN = False
     DRAWING = False
-    PARALLEL_SIZE = 1
-    #PARALLEL_SIZE = 2
+    #PARALLEL_SIZE = 1
+    PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -371,4 +371,4 @@ RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
 MAP_FACTOR = 0.2
 
-FREQ_TH = 0.5
+FREQ_TH = 0.8

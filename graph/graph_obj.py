@@ -1,6 +1,8 @@
 import pdb
 import networkx as nx
 import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 import constants
 
@@ -134,7 +136,7 @@ class Graph(object):
 
         #self.freq_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
         #                 xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = 1.0
-        self.freq_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = 1.0
+        #self.freq_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = 1.0
         #print("update freq map")
 
     def get_graph_patch(self, pose):
@@ -235,15 +237,55 @@ class Graph(object):
 
     def memory_decay(self):
         #calculate criticals
+        self.critical_points = []
+        for obj_id in range(1, 21):
+            sil = []
+        
+            mask = np.array(np.where(self.memory[:,:,obj_id] > 0)).transpose()
+            
+            if mask.shape[0] == 0:
+                self.critical_points.append(np.array([], dtype="int"))
+                continue
+            kmax = min(10, mask.shape[0]-1)
+
+            for k in range(1, kmax):
+                kmeans = KMeans(n_clusters = k).fit(mask)
+                labels = kmeans.labels_
+                #print(k)
+                #print(np_map[:,:,obj_id].shape)
+                #print(labels)
+                if np.unique(labels).shape[0] == 1:
+                    sil.append(0)
+                    continue
+                sil.append(silhouette_score(mask, labels, metric = 'euclidean')) 
+            if len(sil) == 0:
+                self.critical_points.append(np.array([], dtype="int"))
+                continue
+            k = sil.index(max(sil))+2
+            #print(k)
+            kmeans = KMeans(n_clusters = k).fit(mask)
+            centers = kmeans.cluster_centers_
+            self.critical_points.append(np.array(centers, dtype="int"))
+            #print(centers)
+        #for i in range(len(self.critical_points)):
+        #    print(i, ": ", self.critical_points[i])
+
+
         
         #print (self.memory)
         mask = np.where(self.memory < 1)
+        empty_mask = np.where(self.empty_memory > 0)
         #print(self.freq_memory)
         #np.save('%d_memory.npy' % self.index, self.memory)
         #np.save('%d_freq_memory.npy' % self.index, self.freq_memory)
         
         self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR
+        #self.memory = self.memory * constants.MAP_FACTOR
         self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
-        self.freq_memory = self.freq_memory * 0.9
-
+        self.freq_memory = self.freq_memory * constants.FREQ_TH
+        self.freq_memory[empty_mask] += 0.3
+        self.freq_memory[self.freq_memory>1.0] = 1.0
+        #np.save('%d_freq_memory.npy' % self.index, self.freq_memory)
+        
+        print ("current task index: %d decaying" % self.index)
         self.index = self.index +1

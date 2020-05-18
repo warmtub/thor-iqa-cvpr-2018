@@ -100,11 +100,13 @@ class A3CTestingThread(object):
         invalid_percent = self.agent.num_invalid_actions * 1.0 / max(self.agent.num_steps, 1)
         print("percent_invalid_actions_input", self.agent.num_invalid_actions * 1.0 / max(self.agent.num_steps, 1))
 
-        union, inter, maxc = self.agent.get_current_target_iou()
+        #union, inter, maxc = self.agent.get_current_target_iou()
+        #aa = self.agent.get_current_target_iou()
         early_stop = 1 if self.agent.game_state.early_stop else 0
 
 
-        return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, scene_num, scene_seed, required_interaction, union, inter, maxc, early_stop
+        #return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, scene_num, scene_seed, required_interaction, union, inter, maxc, early_stop
+        return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, scene_num, scene_seed, required_interaction, early_stop
 
     def draw_frame(self, action):
         subplot = self.agent.draw_state(action=action)

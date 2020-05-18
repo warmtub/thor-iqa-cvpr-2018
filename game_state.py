@@ -154,9 +154,9 @@ class GameState(object):
                     self.graph.empty_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1])
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1].shape)
-                    if curr_score.any() > constants.FREQ_TH:
-                        self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
-                        self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
+                    #if curr_score.any() > constants.FREQ_TH:
+                        #self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
+                        #self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
 
                     # inverse marked as empty
                     locations = xzy[np.logical_not(mask_locs), :2]
@@ -177,9 +177,9 @@ class GameState(object):
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.empty_memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
-                    if curr_score.any() > constants.FREQ_TH:
-                        self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
-                        self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
+                    #if curr_score.any() > constants.FREQ_TH:
+                        #self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
+                        #self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
             if constants.DRAWING:
                 if constants.GT_OBJECT_DETECTION:
                     boxes = []
@@ -722,4 +722,24 @@ class QuestionGameState(GameState):
         #print ("union and inter", union.shape, " ", inter.shape)
 
         return union.shape[0], inter.shape[0], mem_mask.shape[0]
+
+    def get_critical_coverage(self, obj_ind):
+        #print ("obj_ind: ", obj_ind)
+        if len(self.graph.critical_points) != 20:
+            #print ("memory not prepared")
+            return False
+        if len(self.graph.critical_points[obj_ind-1]) == 0:
+            return False
+        for point in self.graph.critical_points[obj_ind-1]:
+            #self.game_state.graph.empty_memory[:, :, 0] > 1
+            #print ("point: ", obj_ind, point)
+            #print ("memory: ", (self.graph.empty_memory[point[0], point[1], :] > 0).any())
+            print ("freq: ", self.graph.freq_memory[point[0], point[1], :])
+            print ("memory: ", self.graph.empty_memory[point[0], point[1], :])
+            #if not (self.graph.freq_memory[point[0], point[1], :] > constants.FREQ_TH).any():
+                #return False
+            if not (self.graph.empty_memory[point[0], point[1], obj_ind] > 0.8):
+                return False
+        return True
+
 

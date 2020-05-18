@@ -443,6 +443,8 @@ class RLGraphAgent(QAAgent):
         self.forward_pred = np.zeros((3, 3, 3))
         self.next_memory_crops_rot = np.zeros((3, 3, 3))
 
+        self.early_stop = False
+
     def update_spatial_map(self, action):
         if action['action'] == 'Teleport':
             self.spatial_map.memory[action['z'] - self.bounds[1], action['x'] - self.bounds[0], 4] = 1
@@ -553,15 +555,20 @@ class RLGraphAgent(QAAgent):
         
         #check early stop here
         target = 0
+        #print (self.game_state.question_target)
         if self.game_state.question_type_ind == 0 or self.game_state.question_type_ind == 1:
             target = self.game_state.question_target
         elif self.game_state.question_type_ind == 2:
             target = self.game_state.question_target[1]
         else:
             raise Exception('No matching question number')
-        union, inter, mem_cover = self.game_state.get_current_iou(target, self.max_coverage)
-        if mem_cover > 0 and inter/mem_cover > 0.9:
-            self.game_state.early_stop = True
+        #union, inter, mem_cover = self.game_state.get_current_iou(target, self.max_coverage)
+        aa = self.game_state.get_critical_coverage(target)
+        #print ("result is: ", aa)
+        self.game_state.early_stop = aa
+        #print (aa)
+        #if mem_cover > 0 and inter/mem_cover > 0.9:
+            #self.game_state.early_stop = True
 
         self.global_step_id += 1
 

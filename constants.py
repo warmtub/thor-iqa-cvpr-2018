@@ -39,8 +39,8 @@ GT_OBJECT_DETECTION = False
 
 #USED_QUESTION_TYPES = {0, 1, 2}
 #USED_QUESTION_TYPES = {1,2}
-USED_QUESTION_TYPES = {2}
-#USED_QUESTION_TYPES = {1}
+#USED_QUESTION_TYPES = {2}
+USED_QUESTION_TYPES = {1}
 #USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
@@ -369,6 +369,8 @@ np.set_printoptions(suppress=True)
 # Object oriented semantic map
 RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
-MAP_FACTOR = 0.2
+MAP_FACTOR = 0.5
+USED_SCENE = {1,2,3,4,5}
+        
 
 FREQ_TH = 0.8

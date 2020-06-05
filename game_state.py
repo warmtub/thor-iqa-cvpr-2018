@@ -672,16 +672,27 @@ class QuestionGameState(GameState):
             self.reward -= 0.05
 
     def get_current_iou(self, obj_ind, max_coverage):
-        #self.max_coverage
+        ### current best
         mem_mask = np.array(np.where(self.graph.memory[:, :, obj_ind] > pow(constants.MAP_FACTOR, 3)), dtype = int).T  # must explore
         emp_mask = np.array(np.where(self.graph.empty_memory[:, :, 0] > 0), dtype = int).T  # exploration coverage of all
-        cov_mask = np.array(np.where(self.graph.empty_memory[:, :, obj_ind] > 0), dtype = int).T  # exploration coverage of target
+
+        #self.max_coverage
+        #mem_mask = np.array(np.where(self.graph.memory[:, :, obj_ind] > pow(constants.MAP_FACTOR, 3)), dtype = int).T  # must explore
+        #mem_mask = np.array(np.where(self.graph.freq_memory[:, :, obj_ind] > 0), dtype = int).T  # must explore
+        #emp_mask = np.array(np.where(self.graph.empty_memory[:, :, :] > 0), dtype = int).T  # exploration coverage of all
+        #print (emp_mask)
+        #print (emp_mask[:,:2])
+        #print (np.unique(emp_mask[:,:2]))
+        #print (np.unique(emp_mask[:,:2], axis=0))
+        emp_mask = np.unique(emp_mask[:,:2], axis=0)
+        #cov_mask = np.array(np.where(self.graph.empty_memory[:, :, obj_ind] > 0), dtype = int).T  # exploration coverage of target
         
 
         #print(np.array([mem_mask, emp_mask]))
         #print (obj_ind)
         #print ("orioirir and coverage", self.graph.freq_memory.shape, self.graph.empty_memory.shape, )
-        print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape, cov_mask.shape)
+        #print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape, cov_mask.shape)
+        print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape)
         union = np.unique(np.concatenate((mem_mask, emp_mask), axis=0), axis=0)
         #print ("union", union.shape)
 
@@ -721,6 +732,7 @@ class QuestionGameState(GameState):
 
         #print ("union and inter", union.shape, " ", inter.shape)
 
+        print ("union, inter, memmask", union.shape[0], inter.shape[0], mem_mask.shape[0])
         return union.shape[0], inter.shape[0], mem_mask.shape[0]
 
     def get_critical_coverage(self, obj_ind):
@@ -734,8 +746,8 @@ class QuestionGameState(GameState):
             #self.game_state.graph.empty_memory[:, :, 0] > 1
             #print ("point: ", obj_ind, point)
             #print ("memory: ", (self.graph.empty_memory[point[0], point[1], :] > 0).any())
-            print ("freq: ", self.graph.freq_memory[point[0], point[1], :])
-            print ("memory: ", self.graph.empty_memory[point[0], point[1], :])
+            #print ("freq: ", self.graph.freq_memory[point[0], point[1], :])
+            #print ("memory: ", self.graph.empty_memory[point[0], point[1], :])
             #if not (self.graph.freq_memory[point[0], point[1], :] > constants.FREQ_TH).any():
                 #return False
             if not (self.graph.empty_memory[point[0], point[1], obj_ind] > 0.8):

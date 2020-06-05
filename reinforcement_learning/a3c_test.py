@@ -89,8 +89,8 @@ def main():
         os.makedirs(constants.LOG_FILE)
     out_file = open(constants.LOG_FILE + '/results_' + constants.TEST_SET + '_' + py_util.get_time_str() + '.csv', 'w')
     out_file.write(constants.LOG_FILE + '\n')
-    #out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction, union, inter, max, early_stop\n')
-    out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction\n')
+    out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction, union, inter, max, early_stop\n')
+    #out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction\n')
 
     def test_function(thread_ind):
         testing_thread = testing_threads[thread_ind]
@@ -105,13 +105,13 @@ def main():
             row = rows.pop()
             time_lock.release()
 
-            #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop = testing_thread.process(row)
-            answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
+            answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop = testing_thread.process(row)
+            #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
             question_type = row[1] + 1
 
             time_lock.acquire()
-            #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop))
-            output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
+            output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop))
+            #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
             out_file.write(output_str)
             out_file.flush()
             answers_correct.append(int(answer_correct))
@@ -163,8 +163,7 @@ def shuffle_by_scene(rows):
         scene_num = test_datasets[question_type_ind][question_row, :][0]
         
         #print ("data: ",question_row, question_type_ind,scene_num)
-        if scene_num in {5}:
-        #if scene_num in {1,2,3,4}:
+        if scene_num in constants.USED_SCENE:
             rows_np = np.concatenate((rows_np, [[question_row, question_type_ind, scene_num]]))
     
     rows_np = rows_np[rows_np[:,2].argsort()]
@@ -175,7 +174,7 @@ def shuffle_by_scene(rows):
         mask = np.where(rows_np[:,2] == i)
         rows_np[mask] = np.random.permutation(rows_np[mask])
         #print ("rows_np mask: ",rows_np[mask].shape)
-        rows_np_slim = np.vstack([rows_np_slim, rows_np[mask][:60, :]])
+        rows_np_slim = np.vstack([rows_np_slim, rows_np[mask][:10, :]])
 
     #print ("rows_np: ",rows_np.shape)
     #print ("rows_np: ",rows_np[:, :2])
@@ -183,8 +182,8 @@ def shuffle_by_scene(rows):
     #print ("rows_np_slim: ",rows_np_slim[:, :2])
         
 
-    return list(rows_np[:, :2])
-    #return list(rows_np_slim[:, :2])
+    #return list(rows_np[:, :2])
+    return list(rows_np_slim[:, :2])
 
 if __name__ == '__main__':
     main()

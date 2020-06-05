@@ -347,7 +347,7 @@ class RLGraphAgent(QAAgent):
 
         if self.game_state.early_stop:
             print("Early stop triggered <<<<<<<<<<<<+")
-            self.terminal = True
+            #self.terminal = True
 
         if constants.DEBUG:
             print('coverage %.2f - (%.3f%%)  reward %.3f' % (float(self.coverage), float(self.coverage * 100.0 / self.max_coverage), self.reward))
@@ -562,13 +562,13 @@ class RLGraphAgent(QAAgent):
             target = self.game_state.question_target[1]
         else:
             raise Exception('No matching question number')
-        #union, inter, mem_cover = self.game_state.get_current_iou(target, self.max_coverage)
+        union, inter, mem_cover = self.game_state.get_current_iou(target, self.max_coverage)
         aa = self.game_state.get_critical_coverage(target)
         #print ("result is: ", aa)
-        self.game_state.early_stop = aa
+        #self.game_state.early_stop = aa
         #print (aa)
-        #if mem_cover > 0 and inter/mem_cover > 0.9:
-            #self.game_state.early_stop = True
+        if mem_cover > 0 and inter/mem_cover > 0.95:
+            self.game_state.early_stop = True
 
         self.global_step_id += 1
 

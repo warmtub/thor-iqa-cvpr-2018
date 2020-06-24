@@ -24,9 +24,9 @@ for file in glob.glob(os.path.join(args.f, "*.npy")):
     if "FloorPlan1" not in file: continue
     np_map = np.load(file)
     fig, ax = plt.subplots(1, 1)
-    obj_id = 9
+    obj_id = 19
     pcm = ax.pcolor(np_map[:,:,obj_id], cmap=plt.get_cmap('Reds'), vmin=-0, vmax=1)
-    print(np_map[np_map[:,:,obj_id]>0])
+    #print(np_map[np_map[:,:,obj_id]>0])
     #ax.set_title(constants.OBJECTS[obj_id], fontsize=5)
     ax.axis('off')
     """
@@ -86,6 +86,6 @@ for file in glob.glob(os.path.join(args.f, "*.npy")):
 
     #plt.show()
     plt.tight_layout()
-    plt.savefig("%s_apple.png" % file.split('.')[0], dpi = 1000)
+    plt.savefig("%s_%s.png" % (file.split('.')[0], constants.OBJECTS[obj_id]), dpi = 1000)
     plt.close()
     #break

@@ -1,6 +1,7 @@
 import glob
 import numpy as np
 import scipy.misc
+import imageio
 import os
 import time
 import constants
@@ -20,9 +21,9 @@ class ObjectDetector(object):
         import darknet as dn
         dn.set_gpu(int(constants.DARKNET_GPU))
         self.detector_num = detector_num
-        self.net = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov3-thor.cfg'),
-                               py_util.encode(WEIGHT_PATH + 'yolov3-thor_final.weights'), 0)
-        self.meta = dn.load_meta(py_util.encode(WEIGHT_PATH + 'thor.data'))
+        self.net = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov3-custom.cfg'),
+                               py_util.encode(WEIGHT_PATH + 'yolov3-custom_900.weights'), 0)
+        self.meta = dn.load_meta(py_util.encode(WEIGHT_PATH + 'obj.data'))
 
         self.count = 0
 
@@ -97,7 +98,7 @@ def get_detector():
 if __name__ == '__main__':
     # If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
     PATH_TO_TEST_IMAGES_DIR = DIR_PATH + '/test_images'
-    TEST_IMAGE_PATHS = sorted(glob.glob(os.path.join(PATH_TO_TEST_IMAGES_DIR, '*.jpg')))
+    TEST_IMAGE_PATHS = sorted(glob.glob(os.path.join(PATH_TO_TEST_IMAGES_DIR, '*.png')))
 
     if not os.path.exists(DIR_PATH + '/test_images/output'):
         os.mkdir(DIR_PATH + '/test_images/output')
@@ -109,11 +110,11 @@ if __name__ == '__main__':
     import cv2
     for image_path in TEST_IMAGE_PATHS:
         print('image', image_path)
-        image = scipy.misc.imread(image_path)
+        image = imageio.imread(image_path)
         (boxes, scores, classes) = detector.detect(image)
         # Visualization of the results of a detection.
         image = visualize_detections(image, boxes, classes, scores)
-        scipy.misc.imsave(DIR_PATH + '/test_images/output/' + os.path.basename(image_path), image)
+        imageio.imsave(DIR_PATH + '/test_images/output/' + os.path.basename(image_path), image)
     total_time = time.time() - t_start
     print('total time %.3f' % total_time)
     print('per image time %.3f' % (total_time / len(TEST_IMAGE_PATHS)))

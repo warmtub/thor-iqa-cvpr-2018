@@ -15,7 +15,7 @@ import constants
 
 all_object_classes = constants.QUESTION_OBJECT_CLASS_LIST
 
-DEBUG = False
+DEBUG = True
 if DEBUG:
     PARALLEL_SIZE = 1
 else:
@@ -38,6 +38,7 @@ def main(dataset_type):
     else:
         raise Exception('No test set found')
     num_record = int(num_samples_per_scene * np.ceil(num_questions_per_scene * 1.0 / num_samples_per_scene) * len(scene_numbers))
+    num_record = 300
 
     assert(num_samples_per_scene % 4 == 0)
 
@@ -47,7 +48,7 @@ def main(dataset_type):
         if not os.path.exists(prefix + dataset_type + '/data_counting'):
             os.makedirs(prefix + dataset_type + '/data_counting')
 
-        h5 = h5py.File(prefix + dataset_type + '/data_counting/Counting_Questions_' + time_str + '.h5', 'w')
+        h5 = h5py.File(prefix + dataset_type + '_single/data_counting/Counting_Questions_' + time_str + '.h5', 'w')
         h5.create_dataset('questions/question', (num_record, 4), dtype=np.int32)
         print('Generating %d counting questions' % num_record)
 
@@ -60,17 +61,18 @@ def main(dataset_type):
 
             scene_number += 1
             scene_num = scene_numbers[scene_number % len(scene_numbers)]
-
+            scene_seed = random.randint(0, 999999999)
             scene_name = 'FloorPlan%d' % scene_num
             episode.initialize_scene(scene_name)
             num_tries = 0
-            while num_tries < num_samples_per_scene:
-                # randomly pick a pickable object in the scene
-                object_class = random.choice(all_object_classes)
+            #while num_tries < num_samples_per_scene:
+            # randomly pick a pickable object in the scene
+            for object_class in all_object_classes:
                 question = CountQuestion(object_class)  # randomly generate a general counting question
                 generated = [None] * (constants.MAX_COUNTING_ANSWER + 1)
                 generated_counts = set()
-
+                temp_data = []
+                
                 num_tries += 1
 
                 grid_file = 'layouts/%s-layout.npy' % scene_name
@@ -82,12 +84,12 @@ def main(dataset_type):
                 for i in range(100):
                     if DEBUG:
                         print('starting try ', i)
-                    scene_seed = random.randint(0, 999999999)
+                    #scene_seed = random.randint(0, 999999999)
                     episode.initialize_episode(scene_seed=scene_seed, max_num_repeats=constants.MAX_COUNTING_ANSWER + 1, remove_prob=0.5)
                     answer = question.get_answer(episode)
                     object_target = constants.OBJECT_CLASS_TO_ID[object_class]
 
-                    if answer > 0 and answer not in generated_counts:
+                    if answer > 0:# and answer not in generated_counts:
                         if DEBUG:
                             print('target', str(question), object_target, answer)
                         event = episode.event
@@ -209,12 +211,15 @@ def main(dataset_type):
                             pass
 
                     print(str(question), object_target, answer)
+                    if answer == None: break
+                    temp_data.append([scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], answer])
 
-                    if answer is not None and answer < len(generated) and answer not in generated_counts:
-                        generated[answer] = [scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], answer]
-                        generated_counts.add(answer)
-                        print('\tcounts', sorted(list(generated_counts)))
+                    #if answer is not None and answer < len(generated) and answer not in generated_counts:
+                    #    generated[answer] = [scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], answer]
+                    #    generated_counts.add(answer)
+                    #    print('\tcounts', sorted(list(generated_counts)))
 
+                    """
                     if len(generated_counts) == len(generated):
                         for q in generated:
                             if data_ind >= h5['questions/question'].shape[0]:
@@ -225,6 +230,12 @@ def main(dataset_type):
                             k += 1
                         h5.flush()
                         break
+                    """
+                    h5['questions/question'][data_ind, :] = np.array(temp_data[0])
+                    data_ind += 1
+                    k += 1
+                    h5.flush()
+                    break
                 print("# generated samples: {}".format(data_ind))
 
         h5.close()
@@ -244,6 +255,6 @@ def main(dataset_type):
 
 
 if __name__ == '__main__':
-    main('train')
+    #main('train')
     main('val/unseen_scenes')
-    main('val/seen_scenes')
+    #main('val/seen_scenes')

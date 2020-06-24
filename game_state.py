@@ -151,6 +151,8 @@ class GameState(object):
                     curr_score[curr_score == 0] = score[curr_score == 0]
                     #print("curr_score: ", curr_score)
                     self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.memory75[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.memory25[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.empty_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1])
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1].shape)
@@ -175,6 +177,10 @@ class GameState(object):
                     curr_score[replace_locs] = curr_score[replace_locs] * .8
                     self.graph.memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.memory75[locations[:, 1], locations[:, 0],
+                        constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
+                    self.graph.memory25[locations[:, 1], locations[:, 0],
+                        constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.empty_memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     #if curr_score.any() > constants.FREQ_TH:
@@ -195,6 +201,7 @@ class GameState(object):
                 self.detection_image = detector.visualize_detections(self.event.frame, boxes, class_names, scores)
 
     def reset(self, scene_name=None, use_gt=True, seed=None):
+        print("call reset <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<,,<<<<<<<<<<<<<<")
         if scene_name is None:
             # Do half reset
             action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
@@ -415,7 +422,7 @@ class QuestionGameState(GameState):
         self.scene_name = 'FloorPlan%d' % scene_num
         grid_file = 'layouts/%s-layout.npy' % self.scene_name
         if self.scene_name == last_scene_name:
-            self.graph.memory_decay()
+            self.graph.memory_decay(self.scene_name)
             print ("same as last scene")
         else:
             self.graph = graph_obj.Graph(grid_file, use_gt=False)

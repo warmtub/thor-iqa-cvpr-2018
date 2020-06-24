@@ -22,7 +22,7 @@ receptacles.remove('Sink')
 receptacles.remove('TableTop')
 receptacles.remove('StoveBurner')
 
-DEBUG = False
+DEBUG = True
 if DEBUG:
     PARALLEL_SIZE = 1
 else:
@@ -40,11 +40,12 @@ def main(dataset_type):
         num_samples_per_scene = 4
     elif dataset_type == 'val/unseen_scenes':
         num_questions_per_scene = round(1000.0 / PARALLEL_SIZE)
-        scene_numbers = constants.TRAIN_SCENE_NUMBERS
+        scene_numbers = constants.TEST_SCENE_NUMBERS
         num_samples_per_scene = 16
     else:
         raise Exception('No test set found')
     num_record = int(num_samples_per_scene * np.ceil(num_questions_per_scene * 1.0 / num_samples_per_scene) * len(scene_numbers))
+    num_record = 300
 
     assert(num_samples_per_scene % 4 == 0)
 
@@ -54,7 +55,7 @@ def main(dataset_type):
         if not os.path.exists(prefix + dataset_type + '/data_contains'):
             os.makedirs(prefix + dataset_type + '/data_contains')
 
-        h5 = h5py.File(prefix + dataset_type + '/data_contains/Contains_Questions_' + time_str + '.h5', 'w')
+        h5 = h5py.File(prefix + dataset_type + '_single/data_contains/Contains_Questions_' + time_str + '.h5', 'w')
         h5.create_dataset('questions/question', (num_record, 5), dtype=np.int32)
         print('Generating %d contains questions' % num_record)
 
@@ -62,18 +63,19 @@ def main(dataset_type):
         data_ind = 0
         episode = Episode()
         scene_number = -1
+        seeds = [random.randint(0, 999999999) for _ in range(5)]
         while data_ind < num_record:
             k = 0
 
             scene_number += 1
             scene_num = scene_numbers[scene_number % len(scene_numbers)]
-
             scene_name = 'FloorPlan%d' % scene_num
             episode.initialize_scene(scene_name)
             num_tries = 0
             while k < num_samples_per_scene and num_tries < 10 * num_samples_per_scene:
                 # randomly pick a pickable object in the scene
                 object_class = random.choice(all_object_classes)
+                print("object_class is", object_class)
                 generated_no, generated_yes = False, False
                 question = None
                 temp_data = []
@@ -86,7 +88,7 @@ def main(dataset_type):
                     xray_graph.yMax - xray_graph.yMin + 1]
 
                 for i in range(20):  # try 20 times
-                    scene_seed = random.randint(0, 999999999)
+                    scene_seed = random.choice(seeds)/scene_num
                     episode.initialize_episode(scene_seed=scene_seed)  # randomly initialize the scene
                     if not question:
                         question = ExistenceQuestion.get_true_contain_question(episode, all_object_classes, receptacles)
@@ -97,7 +99,9 @@ def main(dataset_type):
                         object_class = question.object_class
                         parent_class = question.parent_object_class
 
+                    print("object_class again is", object_class)
                     answer = question.get_answer(episode)
+                    print("answer is", answer)
                     object_target = constants.OBJECT_CLASS_TO_ID[object_class]
 
                     if answer and not generated_yes:
@@ -173,7 +177,11 @@ def main(dataset_type):
                                 print('failed to generate')
 
                     print(str(question), answer)
+                    if (answer == None):
+                        k = 999
+                        continue
 
+                    #temp_data.append([scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], constants.OBJECT_CLASS_TO_ID[parent_class], answer])
                     if answer == False and not generated_no:
                         generated_no = True
                         temp_data.append([scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], constants.OBJECT_CLASS_TO_ID[parent_class], answer])
@@ -181,6 +189,8 @@ def main(dataset_type):
                         generated_yes = True
                         temp_data.append([scene_num, scene_seed, constants.OBJECT_CLASS_TO_ID[object_class], constants.OBJECT_CLASS_TO_ID[parent_class], answer])
 
+                    
+                    if (data_ind+1 >= num_record): break
                     if generated_no and generated_yes:
                         h5['questions/question'][data_ind, :] = np.array(temp_data[0])
                         h5['questions/question'][data_ind + 1, :] = np.array(temp_data[1])
@@ -188,8 +198,19 @@ def main(dataset_type):
                         data_ind += 2
                         k += 2
                         break
+                    """
+                    if (data_ind >= num_record): break
+                    h5['questions/question'][data_ind, :] = np.array(temp_data[0])
+                    h5.flush()
+                    data_ind += 1
+                    k += 1
+                    break
+                    """
                 print("# generated samples: {}".format(data_ind))
 
+        data = h5['questions/question'][:]
+        h5['questions/question'][:] = data[data[:, 1].argsort()]
+        
         h5.close()
         episode.env.stop_unity()
 
@@ -207,6 +228,6 @@ def main(dataset_type):
 
 
 if __name__ == '__main__':
-    main('train')
+    #main('train')
     main('val/unseen_scenes')
-    main('val/seen_scenes')
+    #main('val/seen_scenes')

@@ -40,10 +40,11 @@ GT_OBJECT_DETECTION = False
 #USED_QUESTION_TYPES = {0, 1, 2}
 #USED_QUESTION_TYPES = {1,2}
 #USED_QUESTION_TYPES = {2}
-USED_QUESTION_TYPES = {1}
-#USED_QUESTION_TYPES = {0}
+#USED_QUESTION_TYPES = {1}
+USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
+#TEST_SET = 'unseen_scenes_single'  # unseen_scenes, seen_scenes
 
 PREDICT_DEPTH = not GT_OBJECT_DETECTION
 
@@ -172,8 +173,8 @@ else:
     DARKNET_GPU = 1
     TRAIN = False
     DRAWING = False
-    #PARALLEL_SIZE = 1
-    PARALLEL_SIZE = 2
+    PARALLEL_SIZE = 1
+    #PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -272,12 +273,14 @@ OBJECTS = [
     'Container',
     'Bread',
     'Mug',
+
+
     'Sink',
     'StoveBurner',
-    'TableTop',
-    'GarbageCan',
-    'Microwave',
-    'Fridge',
+        'TableTop',
+        'GarbageCan',
+        'Microwave',
+        'Fridge',
     'Cabinet',
     ]
 OBJECTS_SINGULAR = [
@@ -369,7 +372,7 @@ np.set_printoptions(suppress=True)
 # Object oriented semantic map
 RANDOM_BY_SCENE = True
 RANDOM_SIMULATION_TIME = 3
-MAP_FACTOR = 0.5
+MAP_FACTOR = 0.2
 USED_SCENE = {1,2,3,4,5}
         
 

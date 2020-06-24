@@ -22,6 +22,8 @@ class Graph(object):
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
         self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        self.memory75 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        self.memory25 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.freq_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.memory[:, :, 0] = 1
@@ -122,6 +124,12 @@ class Graph(object):
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.memory75[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.memory75[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.memory25[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.memory25[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
             self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
@@ -130,6 +138,12 @@ class Graph(object):
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.memory75[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.memory75[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            self.memory25[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
+                    xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
+            self.memory25[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
             self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
@@ -170,6 +184,8 @@ class Graph(object):
                     node = (xx, yy, direction)
                     self.update_edge(node, weight)
         self.memory[yy - self.yMin, xx - self.xMin, 0] = weight
+        self.memory75[yy - self.yMin, xx - self.xMin, 0] = weight
+        self.memory25[yy - self.yMin, xx - self.xMin, 0] = weight
         self.empty_memory[yy - self.yMin, xx - self.xMin, 0] = weight
 
     def update_edge(self, pose, weight):
@@ -235,8 +251,10 @@ class Graph(object):
         new_pose[1] -= self.yMin
         return tuple(new_pose.tolist())
 
-    def memory_decay(self):
+    def memory_decay(self, name):
+        print ("memory decay\n")
         #calculate criticals
+        """
         self.critical_points = []
         for obj_id in range(1, 21):
             sil = []
@@ -269,17 +287,26 @@ class Graph(object):
             #print(centers)
         #for i in range(len(self.critical_points)):
         #    print(i, ": ", self.critical_points[i])
+        """
 
 
         
         #print (self.memory)
-        mask = np.where(self.memory < 1)
+        #mask = np.where(self.memory < 1)
+        mask25 = np.where(self.memory25 < 1)
+        mask75 = np.where(self.memory75 < 1)
         empty_mask = np.where(self.empty_memory > 0)
         #print(self.freq_memory)
-        #np.save('%d_memory.npy' % self.index, self.memory)
+        #np.save('%d_%s_memory.npy' % (self.index, name), self.memory)
+        #np.save('%d_%s_memory75.npy' % (self.index, name), self.memory75)
+        #np.save('%d_%s_memory25.npy' % (self.index, name), self.memory25)
+        #np.save('%d_%s_empty_memory.npy' % (self.index, name), self.empty_memory)
         #np.save('%d_freq_memory.npy' % self.index, self.freq_memory)
         
+        #self.memory[:, :, 1:] = self.memory[:, :, 1:] * constants.MAP_FACTOR
         self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR
+        self.memory75[mask75] = self.memory75[mask75] * 0.75
+        self.memory25[mask25] = self.memory25[mask25] * 0.25
         #self.memory = self.memory * constants.MAP_FACTOR
         self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.freq_memory = self.freq_memory * constants.FREQ_TH

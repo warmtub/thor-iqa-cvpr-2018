@@ -174,16 +174,18 @@ def shuffle_by_scene(rows):
         mask = np.where(rows_np[:,2] == i)
         rows_np[mask] = np.random.permutation(rows_np[mask])
         #print ("rows_np mask: ",rows_np[mask].shape)
-        rows_np_slim = np.vstack([rows_np_slim, rows_np[mask][:10, :]])
+        rows_np_slim = np.vstack([rows_np_slim, rows_np[mask][:11, :]])
 
+    #print ("rows: ",rows.shape)
     #print ("rows_np: ",rows_np.shape)
     #print ("rows_np: ",rows_np[:, :2])
     #print ("rows_np_slim: ",rows_np_slim.shape)
     #print ("rows_np_slim: ",rows_np_slim[:, :2])
         
 
-    #return list(rows_np[:, :2])
-    return list(rows_np_slim[:, :2])
+    #return rows
+    return list(rows_np[:, :2])
+    #return list(rows_np_slim[:, :2])
 
 if __name__ == '__main__':
     main()

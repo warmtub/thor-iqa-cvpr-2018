@@ -380,14 +380,14 @@ class QuestionGameState(GameState):
 
         # get random row
         if test_ind is not None:
-            question_row, question_type_ind = test_ind
-            question_type = self.question_types[question_type_ind]
-            question_data = self.test_datasets[question_type_ind][question_row, :]
-            test_ind = (question_row, question_type_ind)
+            question_data, question_type_ind = test_ind
+            #question_type = self.question_types[question_type_ind]
+            #question_data = self.test_datasets[question_type_ind][question_row, :]
+            #test_ind = (question_row, question_type_ind)
         else:
             question_type = self.question_types[question_type_ind]
-            question_row = self.local_random.randint(0, len(self.datasets[question_type_ind]) - 1)
-            question_data = self.datasets[question_type_ind][question_row, :]
+            question_data = self.local_random.randint(0, len(self.datasets[question_type_ind]) - 1)
+            #question_data = self.datasets[question_type_ind][question_row, :]
 
         container_ind = None
 
@@ -408,8 +408,8 @@ class QuestionGameState(GameState):
 
         print (self.question_target)
 
-        self.scene_seed = scene_seed
-        self.scene_num = scene_num
+        #self.scene_seed = scene_seed
+        #self.scene_num = scene_num
 
         self.object_target = object_ind
         self.parent_target = container_ind
@@ -420,6 +420,7 @@ class QuestionGameState(GameState):
 
         self.question_type_ind = question_type_ind
 
+        """
         last_scene_name = ""
         if hasattr(self, 'scene_name'):
             last_scene_name = self.scene_name
@@ -430,10 +431,11 @@ class QuestionGameState(GameState):
             self.graph.memory_decay(self.scene_name)
             print ("same as last scene")
         else:
-            self.graph = graph_obj.Graph(grid_file, use_gt=False)
-            self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
         print ("scene_name after: ", self.scene_name)
-        
+        """
+        grid_file = constants.LAYOUT_FILE
+        self.graph = graph_obj.Graph(grid_file, use_gt=False)
+        self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
 
         self.bounds = [self.graph.xMin, self.graph.yMin,
             self.graph.xMax - self.graph.xMin + 1,

@@ -14,7 +14,17 @@ EPSILON = 1e-7
 
 class Graph(object):
     def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
-        self.points = (np.load(gt_source_file) * 1.0 / constants.AGENT_STEP_SIZE).astype(int)
+        self.points = (np.load(gt_source_file)).astype(int) # / constants.AGENT_STEP_SIZE
+        #print (np.load(gt_source_file))
+        print (self.points)
+        for i in range(0, 16):
+            for j in range(0, 16):
+                if ((self.points==[i,j]).all(axis=(1))).any():
+                    print('*', end ="")
+                else:
+                    print('.', end ="")
+            print("")
+
         self.xMin = self.points[:, 0].min() - constants.SCENE_PADDING * 2
         self.yMin = self.points[:, 1].min() - constants.SCENE_PADDING * 2
         self.xMax = self.points[:, 0].max() + constants.SCENE_PADDING * 2

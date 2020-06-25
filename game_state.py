@@ -357,6 +357,7 @@ class QuestionGameState(GameState):
                 test_dataset = dataset_np
                 sums = np.sum(np.abs(test_dataset), axis=1)
                 self.test_datasets.append(test_dataset[sums > 0])
+                #print('self.test_datasets', self.test_datasets)
                 print('Type', question_type, 'test num_questions', self.test_datasets[-1].shape)
             else:
                 self.test_datasets.append([])
@@ -391,17 +392,21 @@ class QuestionGameState(GameState):
         container_ind = None
 
         if question_type_ind == 0 or question_type_ind == 1:
-            scene_num, scene_seed, object_ind, answer = question_data
+            #scene_num, scene_seed, object_ind, answer = question_data
+            object_ind = question_data
             self.question_target = object_ind
-            if question_type_ind == 0:
-                answer = bool(answer)
+            #if question_type_ind == 0:
+                #answer = bool(answer)
 
         elif question_type_ind == 2:
-            scene_num, scene_seed, object_ind, container_ind, answer = question_data
-            answer = bool(answer)
+            #scene_num, scene_seed, object_ind, container_ind, answer = question_data
+            object_ind, container_ind = question_data
+            #answer = bool(answer)
             self.question_target = (object_ind, container_ind)
         else:
             raise Exception('No question type found for type %d' % question_type_ind)
+
+        print (self.question_target)
 
         self.scene_seed = scene_seed
         self.scene_num = scene_num

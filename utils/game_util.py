@@ -281,7 +281,3 @@ def set_open_close_object(action, last_event):
             action['objectId'] = ''
     return action
 
-def get_top_view(env):
-    #event = env.step(action='SetTopLevelView')#, topView=True)
-    #event = env.step(action='ToggleMapView')
-    return event

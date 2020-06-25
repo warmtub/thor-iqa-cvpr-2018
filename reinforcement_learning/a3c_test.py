@@ -79,12 +79,13 @@ def main():
         rows = shuffle_by_scene(rows)
     else:
         random.shuffle(rows)
+    #print (rows)
 
     answers_correct = []
     ep_lengths = []
     ep_rewards = []
     invalid_percents = []
-    time_lock = threading.Lock()
+    #time_lock = threading.Lock()
     if not os.path.exists(constants.LOG_FILE):
         os.makedirs(constants.LOG_FILE)
     out_file = open(constants.LOG_FILE + '/results_' + constants.TEST_SET + '_' + py_util.get_time_str() + '.csv', 'w')
@@ -92,39 +93,50 @@ def main():
     out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction, union, inter, max, early_stop\n')
     #out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction\n')
 
+    qtype = 0
+    qobj = 'Apple'
+    qcon = 'Fridge'
+    qobj_idx = constants.OBJECTS.index(qobj)
+    qcon_idx = constants.OBJECTS.index(qcon)
+
+    
     def test_function(thread_ind):
         testing_thread = testing_threads[thread_ind]
         sess.run(testing_thread.sync)
         #from game_state import QuestionGameState
         #if testing_thread.agent.game_state is None:
             #testing_thread.agent.game_state = QuestionGameState(sess=sess)
-        while len(rows) > 0:
-            time_lock.acquire()
-            if len(rows) == 0:
-                break
-            row = rows.pop()
-            time_lock.release()
+        ###while len(rows) > 0:
+        #time_lock.acquire()
+        #if len(rows) == 0:
+        #   break
+        #row = rows.pop()
+        if qtype == 2:
+            question = ((qobj_idx), qtype)
+        else:
+            question = ((qobj_idx, qcon_idx), qtype)
+        #time_lock.release()
 
-            answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop = testing_thread.process(row)
-            #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
-            question_type = row[1] + 1
+        answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop = testing_thread.process(question)
+        #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
+        question_type = row[1] + 1
 
-            time_lock.acquire()
-            output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop))
-            #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
-            out_file.write(output_str)
-            out_file.flush()
-            answers_correct.append(int(answer_correct))
-            ep_lengths.append(ep_length)
-            ep_rewards.append(ep_reward)
-            invalid_percents.append(invalid_percent)
-            print('###############################')
-            print('ep ', row)
-            print('num episodes', len(answers_correct))
-            print('average correct', np.mean(answers_correct))
-            print('invalid percents', np.mean(invalid_percents), np.median(invalid_percents))
-            print('###############################')
-            time_lock.release()
+        #time_lock.acquire()
+        output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop))
+        #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
+        out_file.write(output_str)
+        out_file.flush()
+        answers_correct.append(int(answer_correct))
+        ep_lengths.append(ep_length)
+        ep_rewards.append(ep_reward)
+        invalid_percents.append(invalid_percent)
+        print('###############################')
+        print('ep ', row)
+        print('num episodes', len(answers_correct))
+        print('average correct', np.mean(answers_correct))
+        print('invalid percents', np.mean(invalid_percents), np.median(invalid_percents))
+        print('###############################')
+        #time_lock.release()
 
     test_threads = []
     for i in range(constants.PARALLEL_SIZE):

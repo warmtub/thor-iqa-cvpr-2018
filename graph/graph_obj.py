@@ -292,7 +292,7 @@ class Graph(object):
 
         
         #print (self.memory)
-        #mask = np.where(self.memory < 1)
+        mask = np.where(self.memory < 1)
         mask25 = np.where(self.memory25 < 1)
         mask75 = np.where(self.memory75 < 1)
         empty_mask = np.where(self.empty_memory > 0)

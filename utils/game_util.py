@@ -238,6 +238,7 @@ def object_center_position(obj):
 
 def get_question_str(question_type_ind, question_object_ind, question_container_ind=None):
     object_article = 'a'
+    print (question_object_ind)
     if constants.OBJECTS_SINGULAR[question_object_ind][0] in {'a', 'e', 'i', 'o', 'u'}:
         object_article = 'an'
     container_article = 'a'

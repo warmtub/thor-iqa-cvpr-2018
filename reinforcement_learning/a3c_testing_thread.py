@@ -46,10 +46,6 @@ class A3CTestingThread(object):
         print('Resetting')
         self.prev_action = {'action' : 'Reset'}
         self.agent.reset(seed=test_ind[0], test_ind=test_ind)
-        scene_num = self.agent.game_state.scene_num
-        scene_seed = self.agent.game_state.scene_seed
-        required_interaction = self.agent.game_state.requires_interaction
-
 
         while not terminal and self.agent.num_steps <= constants.MAX_EPISODE_LENGTH:
             self.local_t += 1
@@ -105,7 +101,7 @@ class A3CTestingThread(object):
         early_stop = 1 if self.agent.game_state.early_stop else 0
 
 
-        return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, scene_num, scene_seed, required_interaction, union, inter, maxc, early_stop
+        return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, union, inter, maxc, early_stop
         #return correct, answer, gt_answer, episode_length, episode_reward, invalid_percent, scene_num, scene_seed, required_interaction, early_stop
 
     def draw_frame(self, action):

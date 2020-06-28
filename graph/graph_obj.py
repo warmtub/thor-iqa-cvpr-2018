@@ -15,6 +15,7 @@ EPSILON = 1e-7
 class Graph(object):
     def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
         self.points = (np.load(gt_source_file)).astype(int) # / constants.AGENT_STEP_SIZE
+        """
         #print (np.load(gt_source_file))
         print (self.points)
         for i in range(0, 16):
@@ -24,7 +25,7 @@ class Graph(object):
                 else:
                     print('.', end ="")
             print("")
-
+        """
         self.xMin = self.points[:, 0].min() - constants.SCENE_PADDING * 2
         self.yMin = self.points[:, 1].min() - constants.SCENE_PADDING * 2
         self.xMax = self.points[:, 0].max() + constants.SCENE_PADDING * 2
@@ -32,9 +33,9 @@ class Graph(object):
         gt_edges = {(point[0], point[1]) for point in self.points}
         self.graph = nx.DiGraph()
         self.memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
-        self.memory75 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
-        self.memory25 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
-        self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        #self.memory75 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        #self.memory25 = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        #self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.freq_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.memory[:, :, 0] = 1
         self.construct_graph = construct_graph
@@ -134,6 +135,7 @@ class Graph(object):
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            """
             self.memory75[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory75[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
@@ -143,11 +145,13 @@ class Graph(object):
             self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            """
             self.update_weight(pose[0], pose[1], curr_val[0])
         else:
             self.memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            """
             self.memory75[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.memory75[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
@@ -157,6 +161,7 @@ class Graph(object):
             self.empty_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
                     xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = graph_patch
             self.empty_memory[pose[1] - self.yMin, pose[0] - self.xMin, rows] = curr_val
+            """
 
         #self.freq_memory[yMin - self.yMin:yMin + constants.STEPS_AHEAD - self.yMin,
         #                 xMin - self.xMin:xMin + constants.STEPS_AHEAD - self.xMin, rows] = 1.0
@@ -194,9 +199,9 @@ class Graph(object):
                     node = (xx, yy, direction)
                     self.update_edge(node, weight)
         self.memory[yy - self.yMin, xx - self.xMin, 0] = weight
-        self.memory75[yy - self.yMin, xx - self.xMin, 0] = weight
-        self.memory25[yy - self.yMin, xx - self.xMin, 0] = weight
-        self.empty_memory[yy - self.yMin, xx - self.xMin, 0] = weight
+        #self.memory75[yy - self.yMin, xx - self.xMin, 0] = weight
+        #self.memory25[yy - self.yMin, xx - self.xMin, 0] = weight
+        #self.empty_memory[yy - self.yMin, xx - self.xMin, 0] = weight
 
     def update_edge(self, pose, weight):
         (xx, yy, direction) = pose
@@ -303,9 +308,9 @@ class Graph(object):
         
         #print (self.memory)
         mask = np.where(self.memory < 1)
-        mask25 = np.where(self.memory25 < 1)
-        mask75 = np.where(self.memory75 < 1)
-        empty_mask = np.where(self.empty_memory > 0)
+        #mask25 = np.where(self.memory25 < 1)
+        #mask75 = np.where(self.memory75 < 1)
+        #empty_mask = np.where(self.empty_memory > 0)
         #print(self.freq_memory)
         #np.save('%d_%s_memory.npy' % (self.index, name), self.memory)
         #np.save('%d_%s_memory75.npy' % (self.index, name), self.memory75)
@@ -315,10 +320,10 @@ class Graph(object):
         
         #self.memory[:, :, 1:] = self.memory[:, :, 1:] * constants.MAP_FACTOR
         self.memory[mask] = self.memory[mask] * constants.MAP_FACTOR
-        self.memory75[mask75] = self.memory75[mask75] * 0.75
-        self.memory25[mask25] = self.memory25[mask25] * 0.25
+        #self.memory75[mask75] = self.memory75[mask75] * 0.75
+        #self.memory25[mask25] = self.memory25[mask25] * 0.25
         #self.memory = self.memory * constants.MAP_FACTOR
-        self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
+        #self.empty_memory = np.zeros((self.yMax - self.yMin + 1, self.xMax - self.xMin + 1, 1 + constants.NUM_CLASSES), dtype=np.float32)
         self.freq_memory = self.freq_memory * constants.FREQ_TH
         self.freq_memory[empty_mask] += 0.3
         self.freq_memory[self.freq_memory>1.0] = 1.0

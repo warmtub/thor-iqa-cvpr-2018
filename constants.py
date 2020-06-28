@@ -373,3 +373,8 @@ USED_SCENE = {1,2,3,4,5}
 
 FREQ_TH = 0.8
 LAYOUT_FILE = 'layouts/Lab01-layout.npy'
+AGENT_HEIGHT = 0.0
+START_POSE = (6, 6, 0)
+
+
+## SCENE_PADDING?

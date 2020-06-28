@@ -112,17 +112,17 @@ def main():
         #   break
         #row = rows.pop()
         if qtype == 2:
-            question = ((qobj_idx), qtype)
-        else:
             question = ((qobj_idx, qcon_idx), qtype)
+        else:
+            question = ((qobj_idx), qtype)
         #time_lock.release()
 
-        answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop = testing_thread.process(question)
+        answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, union, inter, maxc, early_stop = testing_thread.process(question)
         #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
         question_type = row[1] + 1
 
         #time_lock.acquire()
-        output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, union, inter, maxc, early_stop))
+        output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, union, inter, maxc, early_stop))
         #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
         out_file.write(output_str)
         out_file.flush()

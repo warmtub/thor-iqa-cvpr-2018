@@ -20,9 +20,15 @@ class ObjectDetector(object):
         import darknet as dn
         dn.set_gpu(int(constants.DARKNET_GPU))
         self.detector_num = detector_num
-        self.net = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov3-thor.cfg'),
-                               py_util.encode(WEIGHT_PATH + 'yolov3-thor_final.weights'), 0)
-        self.meta = dn.load_meta(py_util.encode(WEIGHT_PATH + 'thor.data'))
+        #self.net = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov3-thor.cfg'),
+        #                       py_util.encode(WEIGHT_PATH + 'yolov3-thor_final.weights'), 0)
+        #self.meta = dn.load_meta(py_util.encode(WEIGHT_PATH + 'thor.data'))
+        self.net_custom = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov4-custom.cfg'),
+                               py_util.encode(WEIGHT_PATH + 'yolov4-custom_4000.weights'), 0)
+        self.meta_custom = dn.load_meta(py_util.encode(WEIGHT_PATH + 'obj_less.data'))
+        self.net_origin = dn.load_net(py_util.encode(WEIGHT_PATH + 'yolov4.cfg', 'ascii'),
+                               py_util.encode(WEIGHT_PATH + 'yolov4.weights', 'ascii'), 0)
+        self.meta_origin = dn.load_meta(py_util.encode(WEIGHT_PATH + 'coco.data', 'ascii'))
 
         self.count = 0
 
@@ -31,8 +37,11 @@ class ObjectDetector(object):
         self.count += 1
 
         start = time.time()
-        #results = dn.detect_numpy(self.net, self.meta, image, thresh=confidence_threshold)
-        results = dn.detect(self.net, self.meta, image, thresh=confidence_threshold)
+        #print (image)
+        #print (image.shape)
+        results = dn.detect(self.net_custom, self.meta_custom, image, thresh=confidence_threshold)
+        results += dn.detect(self.net_origin, self.meta_origin, image, thresh=confidence_threshold)
+        #print (results)
 
         if len(results) > 0:
             classes, scores, boxes = zip(*results)
@@ -53,12 +62,12 @@ class ObjectDetector(object):
         if len(inds) > 0:
             classes = np.array(classes[inds])
             boxes = boxes[inds]
-            if len(boxes) > 0:
-                boxes = bb_util.xywh_to_xyxy(boxes.T).T
-            boxes *= np.array([constants.SCREEN_HEIGHT * 1.0 / image.shape[1],
-                               constants.SCREEN_WIDTH * 1.0 / image.shape[0]])[[0, 1, 0, 1]]
-            boxes = np.clip(np.round(boxes), 0, np.array([constants.SCREEN_WIDTH,
-                                                          constants.SCREEN_HEIGHT])[[0, 1, 0, 1]]).astype(np.int32)
+            #if len(boxes) > 0:
+            #    boxes = bb_util.xywh_to_xyxy(boxes.T).T
+            #boxes *= np.array([constants.SCREEN_HEIGHT * 1.0 / image.shape[1],
+            #                   constants.SCREEN_WIDTH * 1.0 / image.shape[0]])[[0, 1, 0, 1]]
+            #boxes = np.clip(np.round(boxes), 0, np.array([constants.SCREEN_WIDTH,
+            #                                              constants.SCREEN_HEIGHT])[[0, 1, 0, 1]]).astype(np.int32)
             scores = scores[inds]
         else:
             boxes = np.zeros((0, 4))
@@ -110,6 +119,7 @@ if __name__ == '__main__':
     for image_path in TEST_IMAGE_PATHS:
         print('image', image_path)
         image = scipy.misc.imread(image_path)
+        print('image', image.shape)
         (boxes, scores, classes) = detector.detect(image)
         # Visualization of the results of a detection.
         image = visualize_detections(image, boxes, classes, scores)

@@ -386,9 +386,9 @@ class RLGraphAgent(QAAgent):
         return np.clip(self.reward / 10, -3, 1), self.terminal
 
     def reset(self, seed=None, test_ind=None):
-        if self.game_state.env is not None:
-            self.game_state.reset(seed=seed, test_ind=test_ind)
-            self.bounds = self.game_state.bounds
+        #if self.game_state.env is not None:
+        self.game_state.reset(test_ind=test_ind)
+        self.bounds = self.game_state.bounds
         self.end_points = np.zeros_like(self.game_state.graph.memory[:, :, 0])
         for end_point in self.game_state.end_point:
             self.end_points[end_point[1] - self.game_state.graph.yMin, end_point[0] - self.game_state.graph.xMin] = 1
@@ -423,9 +423,9 @@ class RLGraphAgent(QAAgent):
         # 5 - free space map
         # 6 - visited locations
         # 7+ - object location
-        if constants.USE_NAVIGATION_AGENT:
-            if self.nav_agent is not None:
-                self.nav_agent.reset(self.game_state.scene_name)
+        #if constants.USE_NAVIGATION_AGENT:
+            #if self.nav_agent is not None:
+                #self.nav_agent.reset(self.game_state.scene_name)
         self.spatial_map = graph_obj.Graph('layouts/%s-layout.npy' % self.game_state.scene_name, use_gt=True, construct_graph=False)
         self.spatial_map.memory = np.concatenate(
                 (np.zeros((self.bounds[3], self.bounds[2], 7)),

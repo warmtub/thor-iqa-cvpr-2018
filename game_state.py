@@ -6,23 +6,32 @@ import numpy as np
 import h5py
 import glob
 import os
+import math
 from graph import graph_obj
 from utils import game_util
 from utils import action_util
 from utils import bb_util
 import tensorflow as tf
 from darknet_object_detection import detector
+
 import rospy
-from question_answering.srv import get_pose
+import ros_numpy
+from question_answering.srv import get_pose, get_depth
+from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import Image, PointCloud2
+
+from PIL import Image as PILImage
+from numpy import asarray
 
 import constants
 
 assert(constants.SCENE_PADDING == 5)
 
+NO_MASTER = constants.NO_MASTER
 
 class GameState(object):
     def __init__(self, sess=None, depth_scope=None):
-        self.env = game_util.create_env()
+        #self.env = game_util.create_env()
         self.action_util = action_util.ActionUtil()
         self.local_random = random.Random()
         if constants.PREDICT_DEPTH:
@@ -39,40 +48,55 @@ class GameState(object):
         self.times = np.zeros((4, 2))
 
         self.image = 0
+        self.point = 0
         self.pose = (0, 0, 0)
+        self.camera_pose = (0, 0, 0)
         rospy.init_node('game_state', anonymous=True)
-        print("wait for service get_pose_srv")
-        rospy.wait_for_service('get_pose_srv')
-        self.get_pose_srv = rospy.ServiceProxy('get_pose_srv', get_pose)
-        
+        #print("wait for service get_pose_srv")
+        #rospy.wait_for_service('qa_getpose_server')
+        if not NO_MASTER:
+            print("wait for service pcl_depth_server")
+            rospy.wait_for_service('pcl_depth_server')
+        self.robot_pose_sub = rospy.Subscriber("/robot_pose", Float64MultiArray, self.robot_pose_cb)
+        self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
+        self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
+        self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
+        self.point_sub = rospy.Subscriber("/eyecam/depth_registered/points", PointCloud2, self.image_cb)
 
-    def pose_cb(self, pose):
-        print (pose)
-        self.pose = pose
+    def robot_pose_cb(self, data):
+        #print ("pose updated\n")
+        self.pose = np.array(data.data)
+
+    def camera_pose_cb(self, data):
+        #print ("pose updated\n")
+        self.camera_pose = np.array(data.data)
+
+    def image_cb(self, data):
+        self.image = ros_numpy.numpify(data)
+    
+    def point_cb(self, data):
+        self.point = ros_numpy.numpify(data)
 
     def process_frame(self, run_object_detection=False):
         self.im_count += 1
         
         ### ros here ###
-        resp = self.get_pose_srv()
-        #self.pose = game_util.get_pose(self.event)
-        self.pose = (resp.x, resp.y, resp.r, resp.h)
-        print (self.pose)
-        print (self.event.frame.shape)
-
-        ### TODO change to real image topic
-        self.s_t_orig = self.event.frame
-        self.s_t = game_util.imresize(self.event.frame, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
-        if constants.DRAWING:
-            self.detection_image = self.s_t_orig.copy()
-        if constants.PREDICT_DEPTH:
-            t_start = time.time()
+        print ("pose:", self.pose)
+        print ("tran:", self.camera_pose)
+        
+        #self.s_t_orig = self.image
+        #self.s_t = self.image
+        #self.s_t = game_util.imresize(self.image, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
+        #if constants.DRAWING:
+        #    self.detection_image = self.s_t_orig.copy()
+        #if constants.PREDICT_DEPTH:
+            #t_start = time.time()
             ### THIS MIGHT CHNAGE USING POINT CLOUD ###
-            self.s_t_depth = self.depth_estimator.get_depth(self.s_t)
-            self.times[0, 0] += time.time() - t_start
-            self.times[0, 1] += 1
-            if self.times[0, 1] % 100 == 0:
-                print('depth time  %.3f' % (self.times[0, 0] / self.times[0, 1]))
+            #self.s_t_depth = self.depth_estimator.get_depth(self.s_t)
+            #self.times[0, 0] += time.time() - t_start
+            #self.times[0, 1] += 1
+            #if self.times[0, 1] % 100 == 0:
+                #print('depth time  %.3f' % (self.times[0, 0] / self.times[0, 1]))
         #elif constants.RENDER_DEPTH_IMAGE:
             #self.s_t_depth = game_util.imresize(self.event.depth_frame, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
 
@@ -84,7 +108,14 @@ class GameState(object):
 
                 t_start = time.time()
                 ### OBJECT DETECTION ###
-                boxes, scores, class_names = self.object_detector.detect(game_util.imresize(self.event.frame, (608, 608), rescale=False))
+                #resp = self.darknet_srv()
+                #print(resp)
+                #boxes, scores, class_names = self.object_detector.detect(game_util.imresize(self.image, (608, 608), rescale=False))
+                if NO_MASTER:
+                    image = PILImage.open('1593678185091044224.jpeg')
+                    self.image = asarray(image)
+                boxes, scores, class_names = self.object_detector.detect(self.image)
+                #print("class_names\t", class_names)
                 #print ("detection score: ", scores)
                 self.times[1, 0] += time.time() - t_start
                 self.times[1, 1] += 1
@@ -95,11 +126,11 @@ class GameState(object):
                 inds = list(range(len(boxes)))
                 for (ii, box, score, class_name) in zip(inds, boxes, scores, class_names):
                     if class_name in constants.OBJECT_CLASS_TO_ID:
-                        if class_name not in mask_dict:
-                            mask_dict[class_name] = np.zeros((constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), dtype=np.float32)
-                        mask_dict[class_name][box[1]:box[3] + 1, box[0]:box[2] + 1] += score
+                        #if class_name not in mask_dict:
+                        #    mask_dict[class_name] = np.zeros((constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), dtype=np.float32)
+                        #mask_dict[class_name][box[1]:box[3] + 1, box[0]:box[2] + 1] += score
                         used_inds.append(ii)
-                mask_dict = {k : np.minimum(v, 1) for k,v in mask_dict.items()}
+                #mask_dict = {k : np.minimum(v, 1) for k,v in mask_dict.items()}
                 #print ("mask_dict: ", mask_dict.items())
                 #print ("mask_dict: ", mask_dict)
                 used_inds = np.array(used_inds)
@@ -112,7 +143,10 @@ class GameState(object):
                     boxes = np.zeros((0, 4))
                     scores = np.zeros(0)
                     class_names = np.zeros(0)
-                masks = [mask_dict[class_name] for class_name in class_names]
+                print("boxes:\t\t", boxes)
+                print("scores:\t\t", scores)
+                print("class_names\t", class_names)
+                #masks = [mask_dict[class_name] for class_name in class_names]
 
                 """
                 if constants.END_TO_END_BASELINE:
@@ -147,6 +181,21 @@ class GameState(object):
             #print ("masks len: ", len(masks))
             #if len(masks)>0:
             #    print ("masks: ", masks[0].shape)
+
+            for ii in range(len(class_names)):
+
+                print (class_names[ii])
+                print (boxes[ii])
+                
+                req = self.depth_srv(int(boxes[ii][1]), int(boxes[ii][0]))
+                if not req: continue
+                location = [req.x, req.y]
+                curr_score = self.graph.memory[location[0], location[1], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1]
+                self.graph.memory[location[0], location[1], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = (curr_score+scores[ii])/2
+
+                #break
+            
+            """
             if constants.RENDER_DEPTH_IMAGE or constants.PREDICT_DEPTH:
                 xzy = game_util.depth_to_world_coordinates(self.s_t_depth, self.pose, self.camera_height / constants.AGENT_STEP_SIZE)
                 max_depth_mask = self.s_t_depth >= constants.MAX_DEPTH
@@ -178,11 +227,10 @@ class GameState(object):
                     curr_score[curr_score == 0] = score[curr_score == 0]
                     #print("curr_score: ", curr_score)
                     self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
-                    """
+                    print(class_names[ii], " at ", locations[:, 1], locations[:, 0])
                     self.graph.memory75[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.memory25[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.empty_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
-                    """
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1])
                     #print("memory: ", self.graph.memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1].shape)
                     #if curr_score.any() > constants.FREQ_TH:
@@ -206,17 +254,17 @@ class GameState(object):
                     curr_score[replace_locs] = curr_score[replace_locs] * .8
                     self.graph.memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
-                    """
+                    print(class_names[ii], " at? ", locations[:, 1], locations[:, 0])
                     self.graph.memory75[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.memory25[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
                     self.graph.empty_memory[locations[:, 1], locations[:, 0],
                         constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = curr_score
-                    """
                     #if curr_score.any() > constants.FREQ_TH:
                         #self.graph.freq_memory[locations[:, 1], locations[:, 0], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] += 0.3
                         #self.graph.freq_memory[self.graph.freq_memory > 1.0] = 1.0
+            """
             """
             if constants.DRAWING:
                 if constants.GT_OBJECT_DETECTION:
@@ -363,6 +411,7 @@ class QuestionGameState(GameState):
         self.question_types = ['existence', 'counting', 'contains']
         self.datasets = []
         self.test_datasets = []
+        """
         for qq,question_type in enumerate(self.question_types):
             prefix = 'questions/'
             path = prefix + 'train/data' + '_' + question_type
@@ -393,8 +442,9 @@ class QuestionGameState(GameState):
                 print('Type', question_type, 'test num_questions', self.test_datasets[-1].shape)
             else:
                 self.test_datasets.append([])
+        """
 
-    def reset(self, seed=None, test_ind=None):
+    def reset(self, test_ind=None):
         self.board = None
         self.seen_object = False
         self.terminal = False
@@ -404,11 +454,9 @@ class QuestionGameState(GameState):
         self.seen_obj2 = set()
         self.visited_locations = set()
         self.can_end = False
-        if seed is not None:
-            self.local_random.seed(seed)
 
         # Do equal number of each question type in train.
-        question_type_ind = self.local_random.sample(constants.USED_QUESTION_TYPES, 1)[0]
+        #question_type_ind = self.local_random.sample(constants.USED_QUESTION_TYPES, 1)[0]
 
         # get random row
         if test_ind is not None:
@@ -487,7 +535,7 @@ class QuestionGameState(GameState):
         elif question_type == 'contains':
             max_num_repeats = 10
             remove_prob = 0.25
-        self.event = game_util.reset(self.env, self.scene_name)
+        #self.event = game_util.reset(self.env, self.scene_name)
         self.agent_height = constants.AGENT_HEIGHT
         self.camera_height = self.agent_height + constants.CAMERA_HEIGHT_OFFSET
         #print(self.agent_height, self.camera_height)
@@ -576,7 +624,7 @@ class QuestionGameState(GameState):
         #start_point = self.local_random.randint(0, self.graph.points.shape[0] - 1)
         #start_point = self.graph.points[start_point, :].copy()
         #self.start_point = (start_point[0], start_point[1], self.local_random.randint(0, 3))
-        self.start_point = constants.START_POSE
+        self.start_point = self.pose
         print(self.start_point)
         """
         action = {'action': 'TeleportFull',

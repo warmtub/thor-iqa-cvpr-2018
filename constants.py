@@ -38,8 +38,8 @@ OBJECT_DETECTION = True
 GT_OBJECT_DETECTION = False
 
 #USED_QUESTION_TYPES = {1, 2}
-USED_QUESTION_TYPES = {0}
-USED_QUESTION_TYPES = {0, 1, 2}
+#USED_QUESTION_TYPES = {0}
+USED_QUESTION_TYPES = {}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
 
@@ -171,6 +171,7 @@ else:
     TRAIN = False
     DRAWING = False
     PARALLEL_SIZE = 1
+    #PARALLEL_SIZE = 2
 
 
 ########################################################################################################################
@@ -230,7 +231,7 @@ if RL:
 
 ########################################################################################################################
 # Object detection hyperparameters
-DETECTION_THRESHOLD = 0.7
+DETECTION_THRESHOLD = 0.25
 MIN_DETECTION_LEN = 10
 if GT_OBJECT_DETECTION:
     MIN_DETECTION_LEN = 4
@@ -374,7 +375,8 @@ USED_SCENE = {1,2,3,4,5}
 FREQ_TH = 0.8
 LAYOUT_FILE = 'layouts/Lab01-layout.npy'
 AGENT_HEIGHT = 0.0
-START_POSE = (6, 6, 0)
-
+#START_POSE = (6, 6, 0)
+NO_MASTER = False
+ORIGIN_POSE = [1.26, 1.48]
 
 ## SCENE_PADDING?

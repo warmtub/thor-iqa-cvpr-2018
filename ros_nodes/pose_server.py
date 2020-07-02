@@ -11,7 +11,7 @@ def handle_get_pose(req):
 
 def get_pose_server():
     rospy.init_node('pose_server')
-    s = rospy.Service('get_pose_srv', get_pose, handle_get_pose)
+    s = rospy.Service('qa_getpose_server', get_pose, handle_get_pose)
     print("pose gogo.")
     rospy.spin()
 

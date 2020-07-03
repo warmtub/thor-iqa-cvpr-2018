@@ -17,7 +17,7 @@ from darknet_object_detection import detector
 import rospy
 import ros_numpy
 from question_answering.srv import get_pose, get_depth
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Int32MultiArray, Float64MultiArray
 from sensor_msgs.msg import Image, PointCloud2
 
 from PIL import Image as PILImage
@@ -48,24 +48,22 @@ class GameState(object):
         self.times = np.zeros((4, 2))
 
         self.image = 0
-        self.point = 0
-        self.pose = (0, 0, 0)
-        self.camera_pose = (0, 0, 0)
+        self.pose = 0
+        self.camera_pose = 0
         rospy.init_node('game_state', anonymous=True)
         #print("wait for service get_pose_srv")
         #rospy.wait_for_service('qa_getpose_server')
         if not NO_MASTER:
             print("wait for service pcl_depth_server")
             rospy.wait_for_service('pcl_depth_server')
-        self.robot_pose_sub = rospy.Subscriber("/robot_pose", Float64MultiArray, self.robot_pose_cb)
+        self.robot_pose_sub = rospy.Subscriber("/robot_pose", Int32MultiArray, self.robot_pose_cb)
         self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
         self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
         self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
-        self.point_sub = rospy.Subscriber("/eyecam/depth_registered/points", PointCloud2, self.image_cb)
 
     def robot_pose_cb(self, data):
         #print ("pose updated\n")
-        self.pose = np.array(data.data)
+        self.pose = data.data
 
     def camera_pose_cb(self, data):
         #print ("pose updated\n")
@@ -73,9 +71,6 @@ class GameState(object):
 
     def image_cb(self, data):
         self.image = ros_numpy.numpify(data)
-    
-    def point_cb(self, data):
-        self.point = ros_numpy.numpify(data)
 
     def process_frame(self, run_object_detection=False):
         self.im_count += 1
@@ -86,7 +81,20 @@ class GameState(object):
         
         #self.s_t_orig = self.image
         #self.s_t = self.image
-        #self.s_t = game_util.imresize(self.image, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
+        try:
+            while type(self.image) == int and not rospy.is_shutdown():
+                print ("wait for image\n")
+                time.sleep(1)
+            while type(self.pose) == int and not rospy.is_shutdown():
+                print ("wait for robot_pose\n")
+                time.sleep(1)
+            while type(self.camera_pose) == int and not rospy.is_shutdown():
+                print ("wait for camera_pose\n")
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print('done')
+            quit()
+        self.s_t = game_util.imresize(self.image, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
         #if constants.DRAWING:
         #    self.detection_image = self.s_t_orig.copy()
         #if constants.PREDICT_DEPTH:
@@ -281,70 +289,45 @@ class GameState(object):
                 self.detection_image = detector.visualize_detections(self.event.frame, boxes, class_names, scores)
             """
 
-    def reset(self, scene_name=None, use_gt=True, seed=None):
-        if scene_name is None:
-            # Do half reset
-            action_ind = self.local_random.randint(0, constants.STEPS_AHEAD ** 2 - 1)
-            action_x = action_ind % constants.STEPS_AHEAD - int(constants.STEPS_AHEAD / 2)
-            action_z = int(action_ind / constants.STEPS_AHEAD) + 1
-            x_shift = 0
-            z_shift = 0
-            if self.pose[2] == 0:
-                x_shift = action_x
-                z_shift = action_z
-            elif self.pose[2] == 1:
-                x_shift = action_z
-                z_shift = -action_x
-            elif self.pose[2] == 2:
-                x_shift = -action_x
-                z_shift = -action_z
-            elif self.pose[2] == 3:
-                x_shift = -action_z
-                z_shift = action_x
-            action_x = self.pose[0] + x_shift
-            action_z = self.pose[1] + z_shift
-            self.end_point = (action_x, action_z, self.pose[2])
+    def reset(self, use_gt=True):
+        
+        grid_file = constants.LAYOUT_FILE
+        self.graph = graph_obj.Graph(grid_file, use_gt=use_gt)
+        lastActionSuccess = False
 
-        else:
-            # Do full reset
-            self.scene_name = scene_name
-            grid_file = 'layouts/%s-layout.npy' % scene_name
-            self.graph = graph_obj.Graph(grid_file, use_gt=use_gt)
-            if seed is not None:
-                self.local_random.seed(seed)
-            lastActionSuccess = False
+        self.bounds = [self.graph.xMin, self.graph.yMin,
+            self.graph.xMax - self.graph.xMin + 1,
+            self.graph.yMax - self.graph.yMin + 1]
 
-            self.bounds = [self.graph.xMin, self.graph.yMin,
-                self.graph.xMax - self.graph.xMin + 1,
-                self.graph.yMax - self.graph.yMin + 1]
+        while not lastActionSuccess:
+            #self.event = game_util.reset(self.env, self.scene_name)
+            self.agent_height = constants.AGENT_HEIGHT
+            self.camera_height = self.agent_height + constants.CAMERA_HEIGHT_OFFSET
+            #self.event = self.env.random_initialize(seed)
+            #start_point = self.local_random.randint(0, self.graph.points.shape[0] - 1)
+            #start_point = self.graph.points[start_point, :].copy()
+            #self.start_point = (start_point[0], start_point[1], self.local_random.randint(0, 3))
+            self.start_point = self.pose
+            self.end_point = self.start_point
+            while self.end_point[0] == self.start_point[0] and self.end_point[1] == self.start_point[1]:
+                end_point = self.local_random.randint(0, self.graph.points.shape[0] - 1)
+                end_point = self.graph.points[end_point, :].copy()
+                self.end_point = [end_point[0], end_point[1], self.local_random.randint(0, 3)]
+                self.end_point[0] += self.local_random.randint(-constants.TERMINAL_CHECK_PADDING, constants.TERMINAL_CHECK_PADDING)
+                self.end_point[1] += self.local_random.randint(-constants.TERMINAL_CHECK_PADDING, constants.TERMINAL_CHECK_PADDING)
+                self.end_point = tuple(self.end_point)
 
-            while not lastActionSuccess:
-                self.event = game_util.reset(self.env, self.scene_name)
-                self.agent_height = self.event.metadata['agent']['position']['y']
-                self.camera_height = self.agent_height + constants.CAMERA_HEIGHT_OFFSET
-                self.event = self.env.random_initialize(seed)
-                start_point = self.local_random.randint(0, self.graph.points.shape[0] - 1)
-                start_point = self.graph.points[start_point, :].copy()
-                self.start_point = (start_point[0], start_point[1], self.local_random.randint(0, 3))
-                self.end_point = self.start_point
-                while self.end_point[0] == self.start_point[0] and self.end_point[1] == self.start_point[1]:
-                    end_point = self.local_random.randint(0, self.graph.points.shape[0] - 1)
-                    end_point = self.graph.points[end_point, :].copy()
-                    self.end_point = [end_point[0], end_point[1], self.local_random.randint(0, 3)]
-                    self.end_point[0] += self.local_random.randint(-constants.TERMINAL_CHECK_PADDING, constants.TERMINAL_CHECK_PADDING)
-                    self.end_point[1] += self.local_random.randint(-constants.TERMINAL_CHECK_PADDING, constants.TERMINAL_CHECK_PADDING)
-                    self.end_point = tuple(self.end_point)
-
-                action = {'action': 'TeleportFull',
-                    'x': self.start_point[0] * constants.AGENT_STEP_SIZE,
-                    'y': self.agent_height,
-                    'z': self.start_point[1] * constants.AGENT_STEP_SIZE,
-                    'rotateOnTeleport': True,
-                    'rotation': self.start_point[2] * 90,
-                    'horizon': 60}
-                self.event = self.env.step(action)
-                lastActionSuccess = self.event.metadata['lastActionSuccess']
-
+            #action = {'action': 'TeleportFull',
+            #    'x': self.start_point[0] * constants.AGENT_STEP_SIZE,
+            #    'y': self.agent_height,
+            #    'z': self.start_point[1] * constants.AGENT_STEP_SIZE,
+            #    'rotateOnTeleport': True,
+            #    'rotation': self.start_point[2] * 90,
+            #   'horizon': 60}
+            #self.event = self.env.step(action)
+            #lastActionSuccess = self.event.metadata['lastActionSuccess']
+            lastActionSuccess = True
+        
         self.process_frame()
         self.board = None
         point_dists = np.sum(np.abs(self.graph.points - np.array(self.end_point[:2])), axis=1)
@@ -515,7 +498,6 @@ class QuestionGameState(GameState):
         """
         grid_file = constants.LAYOUT_FILE
         #grid_file = 'layouts/FloorPlan1-layout.npy'
-        self.scene_name = 'FloorPlan1'
         self.graph = graph_obj.Graph(grid_file, use_gt=False)
         self.xray_graph = graph_obj.Graph(grid_file, use_gt=True)
 
@@ -554,7 +536,11 @@ class QuestionGameState(GameState):
             print('Answer:', constants.OBJECTS[object_ind], 'is', answer)
         #self.answer = answer
         """
-
+        if self.question_type_ind == 1:
+            self.answer = 0
+        else:
+            self.answer = False
+        
         # Verify answer
         """
         if self.question_type_ind == 0:

@@ -39,7 +39,7 @@ GT_OBJECT_DETECTION = False
 
 #USED_QUESTION_TYPES = {1, 2}
 #USED_QUESTION_TYPES = {0}
-USED_QUESTION_TYPES = {}
+USED_QUESTION_TYPES = {0}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
 

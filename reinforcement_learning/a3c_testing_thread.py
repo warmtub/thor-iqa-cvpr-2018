@@ -46,7 +46,7 @@ class A3CTestingThread(object):
         print('Resetting')
         self.prev_action = {'action' : 'Reset'}
         self.agent.reset(seed=test_ind[0], test_ind=test_ind)
-
+        print('Here we go')
         while not terminal and self.agent.num_steps <= constants.MAX_EPISODE_LENGTH:
             self.local_t += 1
             if (self.agent.num_steps % 100) == 0:

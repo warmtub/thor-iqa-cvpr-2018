@@ -141,28 +141,25 @@ class GraphAgent(object):
         self.memory = outputs[3][0, 0, ...]
         self.is_possible = outputs[4][0, 0]
 
-    def reset(self, scene_name=None, seed=None):
-        if scene_name is not None:
-            if self.game_state.env is not None and type(self.game_state) == GameState:
-                self.game_state.reset(scene_name, use_gt=False, seed=seed)
-            self.gt_graph = graph_obj.Graph('layouts/%s-layout.npy' % scene_name, use_gt=True)
-            self.bounds = [self.game_state.graph.xMin, self.game_state.graph.yMin,
-                self.game_state.graph.xMax - self.game_state.graph.xMin + 1,
-                self.game_state.graph.yMax - self.game_state.graph.yMin + 1]
-            if len(self.game_state.end_point) == 0:
-                self.game_state.end_point = (self.game_state.graph.xMin + constants.TERMINAL_CHECK_PADDING,
-                        self.game_state.graph.yMin + constants.TERMINAL_CHECK_PADDING, 0)
-            self.action = np.zeros(self.action_util.num_actions)
-            self.memory = np.zeros((constants.SPATIAL_MAP_HEIGHT, constants.SPATIAL_MAP_WIDTH, constants.MEMORY_SIZE))
-            self.gru_state = np.zeros((1, constants.GRU_SIZE))
-            self.pose = self.game_state.pose
-            self.is_possible = 1
-            self.num_steps = 0
-            self.times = np.zeros(2)
-            self.impossible_spots = set()
-            self.visited_spots = set()
-        else:
-            self.game_state.reset()
+    def reset(self, seed=None):
+        if type(self.game_state) == GameState:
+            self.game_state.reset(use_gt=False)
+        self.gt_graph = graph_obj.Graph(constants.LAYOUT_FILE, use_gt=True)
+        self.bounds = [self.game_state.graph.xMin, self.game_state.graph.yMin,
+            self.game_state.graph.xMax - self.game_state.graph.xMin + 1,
+            self.game_state.graph.yMax - self.game_state.graph.yMin + 1]
+        if len(self.game_state.end_point) == 0:
+            self.game_state.end_point = (self.game_state.graph.xMin + constants.TERMINAL_CHECK_PADDING,
+                    self.game_state.graph.yMin + constants.TERMINAL_CHECK_PADDING, 0)
+        self.action = np.zeros(self.action_util.num_actions)
+        self.memory = np.zeros((constants.SPATIAL_MAP_HEIGHT, constants.SPATIAL_MAP_WIDTH, constants.MEMORY_SIZE))
+        self.gru_state = np.zeros((1, constants.GRU_SIZE))
+        self.pose = self.game_state.pose
+        self.is_possible = 1
+        self.num_steps = 0
+        self.times = np.zeros(2)
+        self.impossible_spots = set()
+        self.visited_spots = set()
 
         self.goal_pose = np.array([self.game_state.end_point[0] - self.game_state.graph.xMin,
                 self.game_state.end_point[1] - self.game_state.graph.yMin],
@@ -423,10 +420,11 @@ class RLGraphAgent(QAAgent):
         # 5 - free space map
         # 6 - visited locations
         # 7+ - object location
-        #if constants.USE_NAVIGATION_AGENT:
-            #if self.nav_agent is not None:
+        if constants.USE_NAVIGATION_AGENT:
+            if self.nav_agent is not None:
                 #self.nav_agent.reset(self.game_state.scene_name)
-        self.spatial_map = graph_obj.Graph('layouts/%s-layout.npy' % self.game_state.scene_name, use_gt=True, construct_graph=False)
+                self.nav_agent.reset()
+        self.spatial_map = graph_obj.Graph(constants.LAYOUT_FILE, use_gt=True, construct_graph=False)
         self.spatial_map.memory = np.concatenate(
                 (np.zeros((self.bounds[3], self.bounds[2], 7)),
                     self.game_state.graph.memory[:, :, 1:].copy()), axis=2)
@@ -451,6 +449,7 @@ class RLGraphAgent(QAAgent):
 
         self.pose = self.game_state.pose
         self.spatial_map.memory[:, :, 1:3] = 0
+        #print("coord_box: ",self.coord_box)
         self.spatial_map.update_graph((self.coord_box, 0), self.pose, rows=[1, 2])
 
         if not constants.USE_NAVIGATION_AGENT:
@@ -503,10 +502,11 @@ class RLGraphAgent(QAAgent):
         patch = patch[:, 0]
         patch[patch == graph_obj.MAX_WEIGHT] = 0
         patch[patch > 1] = 1
-        open_success = not self.game_state.get_action({'action': 'OpenObject'})[2]
-        close_success = not self.game_state.get_action({'action': 'CloseObject'})[2]
+        print(patch)
+        #open_success = not self.game_state.get_action({'action': 'OpenObject'})[2]
+        #close_success = not self.game_state.get_action({'action': 'CloseObject'})[2]
         self.possible_moves = np.concatenate((patch, [1], [1],
-            [self.pose[3] != 330], [self.pose[3] != 60], [open_success], [close_success]))
+            [self.pose[3] != 330], [self.pose[3] != 60], [1], [1]))
 
     def step(self, action):
         self.prev_pose = self.pose

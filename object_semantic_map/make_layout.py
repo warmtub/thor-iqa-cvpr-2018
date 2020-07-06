@@ -7,22 +7,29 @@ import os
 
 out_name = "Lab01"
 
-ldcorners = [[3, 0, 1],
-             [1, 8, 0],
-             [9, 14, 1],
-             [11, 14, 0]]
+ldcorners = [[5, 0, 1],
+             [3, 6, 0],
+             [11, 12, 1],
+             [13, 12, 0]]
 
 
 """""""""""""""""""""""""""
 ↑↑↑CHANGE THIS PART ONLY↑↑↑
 """""""""""""""""""""""""""
 
-items_size = [[2, 4],
-              [2, 8],
-              [2, 8],
-              [2, 2]]
+items_size = [[4, 6],
+              [4, 10],
+              [4, 10],
+              [4, 4]]
 
 layout = np.zeros((12, 16))
+
+for i in range(16):
+    layout[0, i] = 1
+    layout[11, i] = 1
+for i in range(12):
+    layout[i, 0] = 1
+    layout[i, 15] = 1
 
 for i in range(len(ldcorners)):
     if ldcorners[i][2]:

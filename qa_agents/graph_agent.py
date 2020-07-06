@@ -528,19 +528,23 @@ class RLGraphAgent(QAAgent):
         elif action['action'] == 'CloseObject':
             self.last_meta_action[6] = 1
 
+        print("next step is: ", action)
         if action['action'] == 'Answer':
             self.terminal = True
         else:
-            if not constants.USE_NAVIGATION_AGENT or action['action'] != 'Teleport':
+            #if not constants.USE_NAVIGATION_AGENT or action['action'] != 'Teleport':
+            if True:
                 self.game_state.step(action)
-                if not self.game_state.event.metadata['lastActionSuccess']:
-                    self.num_invalid_actions += 1
-                    self.global_num_invalid_actions += 1
-                if action['action'] != 'Teleport':
-                    self.num_steps += 1
-                    self.global_num_steps += 1
+                #if not self.game_state.event.metadata['lastActionSuccess']:
+                #    self.num_invalid_actions += 1
+                #    self.global_num_invalid_actions += 1
+                #if action['action'] != 'Teleport':
+                self.num_steps += 1
+                self.global_num_steps += 1
             else:
-                num_steps, num_invalid_actions = self.nav_agent.goto(action, self.global_step_id)
+                #num_steps, num_invalid_actions = self.nav_agent.goto(action, self.global_step_id)
+                num_steps = 1
+                num_invalid_actions = 0
                 # Still need to step to get reward etc.
                 self.global_num_steps += num_steps
                 self.global_step_id += num_steps
@@ -597,7 +601,7 @@ class RLGraphAgent(QAAgent):
                 'action': 'Teleport',
                 'x': action_x,
                 'z': action_z,
-                'rotation': self.pose[2] * 90,
+                'rotation': self.pose[2],
                 }
         else:
             # Rotate/Look/Open/Close/Answer

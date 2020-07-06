@@ -16,7 +16,7 @@ from darknet_object_detection import detector
 
 import rospy
 import ros_numpy
-from question_answering.srv import get_pose, get_depth
+from question_answering.srv import get_pose, get_depth, move_pose
 from std_msgs.msg import Int32MultiArray, Float64MultiArray
 from sensor_msgs.msg import Image, PointCloud2
 
@@ -56,9 +56,12 @@ class GameState(object):
         if not NO_MASTER:
             print("wait for service pcl_depth_server")
             rospy.wait_for_service('pcl_depth_server')
+            print("wait for service target_pose")
+            rospy.wait_for_service('target_pose')
         self.robot_pose_sub = rospy.Subscriber("/robot_pose", Int32MultiArray, self.robot_pose_cb)
         self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
         self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
+        self.move_srv = rospy.ServiceProxy('target_pose', move_pose)
         self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
 
     def robot_pose_cb(self, data):
@@ -676,21 +679,31 @@ class QuestionGameState(GameState):
 
         return action, teleport_failure, should_fail
 
-    def step(self, action_or_ind):
+    def step(self, action):
         self.reward = -0.01
-        action, teleport_failure, should_fail = self.get_action(action_or_ind)
+        #action, teleport_failure, should_fail = self.get_action(action_or_ind)
 
         t_start = time.time()
-        if should_fail or teleport_failure:
-            self.event.metadata['lastActionSuccess'] = False
-        else:
-            if action['action'] != 'Teleport' or not constants.USE_NAVIGATION_AGENT:
-                self.event = self.env.step(action)
-            else:
-                # Action is teleport and I should do low level navigation.
-                pass
+        if action['action'] == 'Teleport':
+            print (action)
+            self.move_srv(int(action['x']), int(action['z']), action['rotation'], 0)
+        if action['action'] == 'RotateRight':
+            right = (self.pose[1]+1)%4
+            self.move_srv(self.pose[0], self.pose[1], right, 0)
+        if action['action'] == 'RotateLeft':
+            left = (self.pose[1]-1)%4
+            self.move_srv(self.pose[0], self.pose[1], left, 0)
+        #if should_fail or teleport_failure:
+        #    self.event.metadata['lastActionSuccess'] = False
+        #else:
+        #    if action['action'] != 'Teleport' or not constants.USE_NAVIGATION_AGENT:
+        #        self.event = self.env.step(action)
+        #    else:
+        #        # Action is teleport and I should do low level navigation.
+        #        pass
 
-        new_pose = game_util.get_pose(self.event)
+        #new_pose = game_util.get_pose(self.event)
+        new_pose = self.pose
         point_dists = np.sum(np.abs(self.graph.points - np.array(new_pose)[:2]), axis=1)
         if np.min(point_dists) > 0.0001:
             print('Point teleport failure')
@@ -713,9 +726,10 @@ class QuestionGameState(GameState):
         if self.times[2, 1] % 100 == 0:
             print('env step time %.3f' % (self.times[2, 0] / self.times[2, 1]))
 
-        if self.event.metadata['lastActionSuccess']:
+        #if self.event.metadata['lastActionSuccess']:
+        if True:
             self.process_frame()
-
+            """
             if action['action'] == 'OpenObject':
                 if self.question_type_ind == 2 and action['objectId'].split('|')[0] != constants.OBJECTS[self.question_target[1]]:
                     self.reward -= 1.0
@@ -730,8 +744,10 @@ class QuestionGameState(GameState):
                 if action['objectId'] not in self.closed_receptacles:
                     self.reward += 0.1
                 self.closed_receptacles.add(action['objectId'])
+            """
 
             # Update seen objects related to question
+            """
             objs = game_util.get_objects_of_type(constants.OBJECTS[self.object_target], self.event.metadata)
             objs = [obj for obj in objs if (obj['objectId'] in self.event.instance_detections2D and
                         game_util.check_object_size(self.event.instance_detections2D[obj['objectId']]))]
@@ -764,6 +780,7 @@ class QuestionGameState(GameState):
                             for contained_obj in obj['pivotSimObjs']:
                                 if contained_obj['objectId'] in self.seen_obj1:
                                     self.can_end = True
+            """
 
         else:
             self.reward -= 0.05

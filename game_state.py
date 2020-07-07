@@ -16,8 +16,8 @@ from darknet_object_detection import detector
 
 import rospy
 import ros_numpy
-from question_answering.srv import get_pose, get_depth, move_pose
-from std_msgs.msg import Int32MultiArray, Float64MultiArray
+from question_answering.srv import get_pose, get_depth, move_pose, rotate
+from std_msgs.msg import Int32, Int32MultiArray, Float64MultiArray
 from sensor_msgs.msg import Image, PointCloud2
 
 from PIL import Image as PILImage
@@ -60,9 +60,11 @@ class GameState(object):
             rospy.wait_for_service('target_pose')
         self.robot_pose_sub = rospy.Subscriber("/robot_pose", Int32MultiArray, self.robot_pose_cb)
         self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
+        self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
+        self.view_pose_pub = rospy.Publisher('/eyecam_view_angle', Int32, queue_size=1)
         self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
         self.move_srv = rospy.ServiceProxy('target_pose', move_pose)
-        self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
+        self.rotate_srv = rospy.ServiceProxy('rotate_only', rotate)
 
     def robot_pose_cb(self, data):
         #print ("pose updated\n")
@@ -689,10 +691,16 @@ class QuestionGameState(GameState):
             self.move_srv(int(action['x']), int(action['z']), action['rotation'], 0)
         if action['action'] == 'RotateRight':
             right = (self.pose[1]+1)%4
-            self.move_srv(self.pose[0], self.pose[1], right, 0)
+            self.rotate_srv(right)
         if action['action'] == 'RotateLeft':
             left = (self.pose[1]-1)%4
-            self.move_srv(self.pose[0], self.pose[1], left, 0)
+            self.rotate_srv(left)
+        if action['action'] == 'LookUp':
+            angle = max(0, self.pose[3]-30)
+            self.view_pose_pub.publish(angle)
+        if action['action'] == 'LookDown':
+            angle = min(60, self.pose[3]+30)
+            self.view_pose_pub.publish(angle)
         #if should_fail or teleport_failure:
         #    self.event.metadata['lastActionSuccess'] = False
         #else:
@@ -705,7 +713,10 @@ class QuestionGameState(GameState):
         #new_pose = game_util.get_pose(self.event)
         new_pose = self.pose
         point_dists = np.sum(np.abs(self.graph.points - np.array(new_pose)[:2]), axis=1)
+        print ("min dist: ", np.min(point_dists))
         if np.min(point_dists) > 0.0001:
+            #trust my navigation
+            """
             print('Point teleport failure')
             closest_point = self.graph.points[np.argmin(point_dists)]
             self.event = self.env.step({
@@ -716,6 +727,7 @@ class QuestionGameState(GameState):
                 'rotateOnTeleport': True,
                 'rotation': self.pose[2] * 90,
             })
+            """
         else:
             closest_point = np.argmin(point_dists)
             if closest_point not in self.visited_locations:

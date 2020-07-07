@@ -528,7 +528,6 @@ class RLGraphAgent(QAAgent):
         elif action['action'] == 'CloseObject':
             self.last_meta_action[6] = 1
 
-        print("next step is: ", action)
         if action['action'] == 'Answer':
             self.terminal = True
         else:

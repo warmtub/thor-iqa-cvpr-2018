@@ -62,6 +62,16 @@ class A3CTestingThread(object):
                 self.draw_frame(self.prev_action)
                 self.prev_action = action_dict
 
+            print("next action is: ", action_dict)
+            key = 0
+            while key != 'n':
+                key = input()
+                if key == 'q':
+                    quit()
+                if key == 'p':
+                    break
+            if key == 'p':
+                continue
             # process game
             self.agent.step(action_dict)
             reward, terminal = self.agent.get_reward()

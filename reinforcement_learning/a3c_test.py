@@ -54,11 +54,12 @@ def main():
         if constants.PREDICT_DEPTH:
             depth_estimator.load_weights()
 
-        testing_threads = []
+        #testing_threads = []
 
-        for i in range(constants.PARALLEL_SIZE):
-            testing_thread = A3CTestingThread(i, sess, net_scope, depth_scope)
-            testing_threads.append(testing_thread)
+        testing_thread = A3CTestingThread(0, sess, net_scope, depth_scope)
+        #for i in range(constants.PARALLEL_SIZE):
+            #testing_thread = A3CTestingThread(i, sess, net_scope, depth_scope)
+            #testing_threads.append(testing_thread)
 
         tf_util.restore_from_dir(sess, constants.CHECKPOINT_DIR, True)
 
@@ -100,44 +101,44 @@ def main():
     qcon_idx = constants.OBJECTS.index(qcon)
 
     
-    def test_function(thread_ind):
-        testing_thread = testing_threads[thread_ind]
-        sess.run(testing_thread.sync)
-        #from game_state import QuestionGameState
-        #if testing_thread.agent.game_state is None:
-            #testing_thread.agent.game_state = QuestionGameState(sess=sess)
-        ###while len(rows) > 0:
-        #time_lock.acquire()
-        #if len(rows) == 0:
-        #   break
-        #row = rows.pop()
-        if qtype == 2:
-            question = ((qobj_idx, qcon_idx), qtype)
-        else:
-            question = ((qobj_idx), qtype)
-        #time_lock.release()
+    #def test_function(thread_ind):
+    #testing_thread = testing_threads[thread_ind]
+    sess.run(testing_thread.sync)
+    #from game_state import QuestionGameState
+    #if testing_thread.agent.game_state is None:
+        #testing_thread.agent.game_state = QuestionGameState(sess=sess)
+    ###while len(rows) > 0:
+    #time_lock.acquire()
+    #if len(rows) == 0:
+    #   break
+    #row = rows.pop()
+    if qtype == 2:
+        question = ((qobj_idx, qcon_idx), qtype)
+    else:
+        question = ((qobj_idx), qtype)
+    #time_lock.release()
 
-        answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, union, inter, maxc, early_stop = testing_thread.process(question)
-        #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
-        question_type = row[1] + 1
+    answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, union, inter, maxc, early_stop = testing_thread.process(question)
+    #answer_correct, answer, gt_answer, ep_length, ep_reward, invalid_percent, scene_num, seed, required_interaction, early_stop = testing_thread.process(row)
+    question_type = qtype + 1
 
-        #time_lock.acquire()
-        output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, union, inter, maxc, early_stop))
-        #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
-        out_file.write(output_str)
-        out_file.flush()
-        answers_correct.append(int(answer_correct))
-        ep_lengths.append(ep_length)
-        ep_rewards.append(ep_reward)
-        invalid_percents.append(invalid_percent)
-        print('###############################')
-        print('ep ', row)
-        print('num episodes', len(answers_correct))
-        print('average correct', np.mean(answers_correct))
-        print('invalid percents', np.mean(invalid_percents), np.median(invalid_percents))
-        print('###############################')
-        #time_lock.release()
+    #time_lock.acquire()
+    output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, union, inter, maxc, early_stop))
+    #output_str = ('%d, %d, %d, %d, %d, %f, %d, %d, %d, %d\n' % (question_type, answer_correct, answer, gt_answer, ep_length, invalid_percent, scene_num, seed, required_interaction, early_stop))
+    out_file.write(output_str)
+    out_file.flush()
+    answers_correct.append(int(answer_correct))
+    ep_lengths.append(ep_length)
+    ep_rewards.append(ep_reward)
+    invalid_percents.append(invalid_percent)
+    print('###############################')
+    print('num episodes', len(answers_correct))
+    print('average correct', np.mean(answers_correct))
+    print('invalid percents', np.mean(invalid_percents), np.median(invalid_percents))
+    print('###############################')
+    #time_lock.release()
 
+    """
     test_threads = []
     for i in range(constants.PARALLEL_SIZE):
         test_threads.append(threading.Thread(target=test_function, args=(i,)))
@@ -147,6 +148,7 @@ def main():
 
     for t in test_threads:
         t.join()
+    """
 
     out_file.close()
 

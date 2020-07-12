@@ -15,6 +15,7 @@ EPSILON = 1e-7
 class Graph(object):
     def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
         self.points = (np.load(gt_source_file)).astype(int) # / constants.AGENT_STEP_SIZE
+
         """
         #print (np.load(gt_source_file))
         print (self.points)
@@ -304,8 +305,6 @@ class Graph(object):
         #    print(i, ": ", self.critical_points[i])
         """
 
-
-        
         #print (self.memory)
         mask = np.where(self.memory < 1)
         #mask25 = np.where(self.memory25 < 1)
@@ -331,3 +330,6 @@ class Graph(object):
         
         print ("current task index: %d decaying" % self.index)
         self.index = self.index +1
+
+    def save_memory(self, ns):
+        np.save(ns, self.memory)

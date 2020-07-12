@@ -19,6 +19,9 @@ import ros_numpy
 from question_answering.srv import get_pose, get_depth, move_pose, rotate
 from std_msgs.msg import Int32, Int32MultiArray, Float64MultiArray
 from sensor_msgs.msg import Image, PointCloud2
+import cv2
+import time
+import scipy
 
 from PIL import Image as PILImage
 from numpy import asarray
@@ -50,21 +53,27 @@ class GameState(object):
         self.image = 0
         self.pose = 0
         self.camera_pose = 0
-        rospy.init_node('game_state', anonymous=True)
-        #print("wait for service get_pose_srv")
-        #rospy.wait_for_service('qa_getpose_server')
         if not NO_MASTER:
-            print("wait for service pcl_depth_server")
-            rospy.wait_for_service('pcl_depth_server')
-            print("wait for service target_pose")
-            rospy.wait_for_service('target_pose')
-        self.robot_pose_sub = rospy.Subscriber("/robot_pose", Int32MultiArray, self.robot_pose_cb)
-        self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
-        self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
-        self.view_pose_pub = rospy.Publisher('/eyecam_view_angle', Int32, queue_size=1)
-        self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
-        self.move_srv = rospy.ServiceProxy('target_pose', move_pose)
-        self.rotate_srv = rospy.ServiceProxy('rotate_only', rotate)
+            rospy.init_node('game_state', anonymous=True)
+            #print("wait for service get_pose_srv")
+            #rospy.wait_for_service('qa_getpose_server')
+            if not NO_MASTER:
+                print("wait for service pcl_depth_server")
+                rospy.wait_for_service('pcl_depth_server')
+                print("wait for service target_pose")
+                rospy.wait_for_service('target_pose')
+                print("wait for service rotate_only")
+                rospy.wait_for_service('rotate_only')
+                print("wait for service eyecam_view_angle")
+                rospy.wait_for_service('eyecam_view_angle')
+            self.robot_pose_sub = rospy.Subscriber("/robot_pose", Int32MultiArray, self.robot_pose_cb)
+            self.camera_pose_sub = rospy.Subscriber("/camera_pose", Float64MultiArray, self.camera_pose_cb)
+            self.image_sub = rospy.Subscriber("/eyecam/color/image_raw", Image, self.image_cb)
+            self.depth_srv = rospy.ServiceProxy('pcl_depth_server', get_depth)
+            self.move_srv = rospy.ServiceProxy('target_pose', move_pose)
+            self.rotate_srv = rospy.ServiceProxy('rotate_only', rotate)
+            self.view_pose_srv = rospy.ServiceProxy('eyecam_view_angle', rotate)
+        self.image_dirty = False
 
     def robot_pose_cb(self, data):
         #print ("pose updated\n")
@@ -75,7 +84,9 @@ class GameState(object):
         self.camera_pose = np.array(data.data)
 
     def image_cb(self, data):
+        self.image_dirty = False
         self.image = ros_numpy.numpify(data)
+        self.image[:,:,[0, 2]] = self.image[:,:,[2, 0]]
 
     def process_frame(self, run_object_detection=False):
         self.im_count += 1
@@ -86,6 +97,11 @@ class GameState(object):
         
         #self.s_t_orig = self.image
         #self.s_t = self.image
+        if NO_MASTER:
+            image = PILImage.open('fake.JPG')
+            self.image = asarray(image)
+            self.pose = (5, 5, 0, 45)
+            self.camera_pose = np.array([0, 0, 0])
         try:
             while type(self.image) == int and not rospy.is_shutdown():
                 print ("wait for image\n")
@@ -99,6 +115,11 @@ class GameState(object):
         except KeyboardInterrupt:
             print('done')
             quit()
+        #print("numpofy", self.image[:10,0,:])
+        #print("numpofy", self.image[:10,0,:])
+        while(self.image_dirty): pass
+        #self.image = scipy.misc.imread(image_path)
+        #print("scipy", self.image[:10,0,:])
         self.s_t = game_util.imresize(self.image, (constants.SCREEN_HEIGHT, constants.SCREEN_WIDTH), rescale=False)
         #if constants.DRAWING:
         #    self.detection_image = self.s_t_orig.copy()
@@ -115,7 +136,7 @@ class GameState(object):
 
         if (constants.GT_OBJECT_DETECTION or constants.OBJECT_DETECTION or
                 (constants.END_TO_END_BASELINE and constants.USE_OBJECT_DETECTION_AS_INPUT) and
-                not run_object_detection):
+                not run_object_detection) and not constants.NO_MASTER:
             if constants.OBJECT_DETECTION and not run_object_detection:
                 # Get detections.
 
@@ -124,9 +145,6 @@ class GameState(object):
                 #resp = self.darknet_srv()
                 #print(resp)
                 #boxes, scores, class_names = self.object_detector.detect(game_util.imresize(self.image, (608, 608), rescale=False))
-                if NO_MASTER:
-                    image = PILImage.open('1593678185091044224.jpeg')
-                    self.image = asarray(image)
                 boxes, scores, class_names = self.object_detector.detect(self.image)
                 #print("class_names\t", class_names)
                 #print ("detection score: ", scores)
@@ -201,7 +219,9 @@ class GameState(object):
                 print (boxes[ii])
                 
                 req = self.depth_srv(int(boxes[ii][1]), int(boxes[ii][0]))
-                if not req: continue
+                print(req)
+                if not req.suc: continue
+                if req.x < self.graph.xMin or req.x > self.graph.xMax or req.y < self.graph.yMin or req.y > self.graph.yMax: continue
                 location = [req.x, req.y]
                 curr_score = self.graph.memory[location[0], location[1], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1]
                 self.graph.memory[location[0], location[1], constants.OBJECT_CLASS_TO_ID[class_names[ii]] + 1] = (curr_score+scores[ii])/2
@@ -686,21 +706,27 @@ class QuestionGameState(GameState):
         #action, teleport_failure, should_fail = self.get_action(action_or_ind)
 
         t_start = time.time()
-        if action['action'] == 'Teleport':
-            print (action)
-            self.move_srv(int(action['x']), int(action['z']), action['rotation'], 0)
-        if action['action'] == 'RotateRight':
-            right = (self.pose[1]+1)%4
-            self.rotate_srv(right)
-        if action['action'] == 'RotateLeft':
-            left = (self.pose[1]-1)%4
-            self.rotate_srv(left)
-        if action['action'] == 'LookUp':
-            angle = max(0, self.pose[3]-30)
-            self.view_pose_pub.publish(angle)
-        if action['action'] == 'LookDown':
-            angle = min(60, self.pose[3]+30)
-            self.view_pose_pub.publish(angle)
+        if not constants.NO_MASTER:
+            if action['action'] == 'Teleport':
+                #print(self.graph.points)
+                if ((self.graph.points==[int(action['x']), int(action['z'])]).all(axis=(1))).any():
+                    done = False
+                    while not done:
+                        done = self.move_srv(int(action['x']), int(action['z']), action['rotation'], 0)
+                else:
+                    print ('huh?')
+            if action['action'] == 'RotateRight':
+                right = (self.pose[2]+1)%4
+                self.rotate_srv(right)
+            if action['action'] == 'RotateLeft':
+                left = (self.pose[2]-1)%4
+                self.rotate_srv(left)
+            if action['action'] == 'LookUp':
+                angle = max(0, self.pose[3]-15)
+                self.view_pose_srv(angle)
+            if action['action'] == 'LookDown':
+                angle = min(60, self.pose[3]+15)
+                self.view_pose_srv(angle)
         #if should_fail or teleport_failure:
         #    self.event.metadata['lastActionSuccess'] = False
         #else:
@@ -713,7 +739,7 @@ class QuestionGameState(GameState):
         #new_pose = game_util.get_pose(self.event)
         new_pose = self.pose
         point_dists = np.sum(np.abs(self.graph.points - np.array(new_pose)[:2]), axis=1)
-        print ("min dist: ", np.min(point_dists))
+        #print ("min dist: ", np.min(point_dists))
         if np.min(point_dists) > 0.0001:
             #trust my navigation
             """
@@ -740,6 +766,7 @@ class QuestionGameState(GameState):
 
         #if self.event.metadata['lastActionSuccess']:
         if True:
+            if not NO_MASTER: self.image_dirty = True
             self.process_frame()
             """
             if action['action'] == 'OpenObject':
@@ -818,7 +845,7 @@ class QuestionGameState(GameState):
         #print (obj_ind)
         #print ("orioirir and coverage", self.graph.freq_memory.shape, self.graph.empty_memory.shape, )
         #print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape, cov_mask.shape)
-        print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape)
+        #print ("freq_mem and coverage", mem_mask.shape, emp_mask.shape)
         union = np.unique(np.concatenate((mem_mask, emp_mask), axis=0), axis=0)
         #print ("union", union.shape)
 
@@ -858,7 +885,7 @@ class QuestionGameState(GameState):
 
         #print ("union and inter", union.shape, " ", inter.shape)
 
-        print ("union, inter, memmask", union.shape[0], inter.shape[0], mem_mask.shape[0])
+        #print ("union, inter, memmask", union.shape[0], inter.shape[0], mem_mask.shape[0])
         return union.shape[0], inter.shape[0], mem_mask.shape[0]
 
     def get_critical_coverage(self, obj_ind):

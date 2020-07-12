@@ -35,7 +35,7 @@ for i in range(layout.shape[0]):
     for j in range(layout.shape[1]):
         if layout[i,j]:
             print('*', end ='')
-            grids = np.append(grids, np.array([[i,j]]), axis=0)
+            grids = np.append(grids, np.array([[j,i]]), axis=0)
         else:
             print('.', end ='')
     print("")
@@ -44,3 +44,4 @@ print (grids)
 out_name = 'layouts/' + out_name + '-layout.npy'
 with open(out_name, 'wb') as f:
     np.save(f, grids)
+    print('Write success')

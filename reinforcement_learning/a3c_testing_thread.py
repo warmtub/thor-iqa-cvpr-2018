@@ -5,7 +5,7 @@ import numpy as np
 from utils import game_util
 from qa_agents import graph_agent
 from qa_agents import end_to_end_baseline_agent
-import time
+import os, time, cv2
 
 import constants
 
@@ -44,6 +44,15 @@ class A3CTestingThread(object):
         episode_reward = 0
 
         print('Resetting')
+        ns = os.path.join(constants.LOGS_PATH, str(time.time()))
+        image_path = os.path.join(ns, 'images')
+        map_path = os.path.join(ns, 'maps')
+        if not os.path.exists(ns):
+            os.mkdir(ns)
+            os.mkdir(image_path)
+            os.mkdir(map_path)
+        action_file = open(os.path.join(ns, "action.txt"), "w") 
+
         self.prev_action = {'action' : 'Reset'}
         self.agent.reset(seed=test_ind[0], test_ind=test_ind)
         print('Here we go')
@@ -63,6 +72,7 @@ class A3CTestingThread(object):
                 self.prev_action = action_dict
 
             print("next action is: ", action_dict)
+            """
             key = 0
             while key != 'n':
                 key = input()
@@ -72,8 +82,14 @@ class A3CTestingThread(object):
                     break
             if key == 'p':
                 continue
+            """
             # process game
             self.agent.step(action_dict)
+
+            cv2.imwrite(os.path.join(image_path, '%d.JPG'%self.local_t), self.agent.game_state.image)
+            np.save(os.path.join(map_path, '%d.npy'%self.local_t), self.agent.game_state.graph.memory)
+            action_file.write('%s\n'%game_util.get_action_str_full(action_dict))
+
             reward, terminal = self.agent.get_reward()
 
             if (self.agent.num_steps % 100) == 0:
@@ -84,7 +100,7 @@ class A3CTestingThread(object):
                 print('terminal', terminal)
 
             episode_reward += reward
-
+        action_file.close()
 
         if constants.DRAWING:
             self.agent.inference()

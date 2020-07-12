@@ -43,7 +43,8 @@ USED_QUESTION_TYPES = {}
 
 TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
 
-PREDICT_DEPTH = not GT_OBJECT_DETECTION
+#PREDICT_DEPTH = not GT_OBJECT_DETECTION
+PREDICT_DEPTH = False
 
 ########################################################################################################################
 # Task specific hyperparameters
@@ -376,7 +377,7 @@ FREQ_TH = 0.8
 LAYOUT_FILE = 'layouts/Lab01-layout.npy'
 AGENT_HEIGHT = 0.0
 #START_POSE = (6, 6, 0)
-NO_MASTER = False
+NO_MASTER = True
 ORIGIN_POSE = [1.26, 1.48]
-
+LOGS_PATH = 'thesis_logs'
 ## SCENE_PADDING?

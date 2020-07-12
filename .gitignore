@@ -17,3 +17,6 @@ thor_builds/
 logs
 question_data_dump
 *weights
+
+thesis_logs/*
+darknet_object_detection/*

@@ -185,6 +185,24 @@ def get_action_str(action):
         action_str = action['action']
     return action_str
 
+def get_action_str_full(action):
+    if action['action'] == 'Teleport':
+        action_str = 'Goto %d %d' % (action['x'], action['z'])
+    elif action['action'] == 'OpenObject':
+        if 'objectId' not in action:
+            action['objectId'] = 'None'
+        action_str = 'Open %s' % action['objectId'].split('|')[0]
+    elif action['action'] == 'CloseObject':
+        if 'objectId' not in action:
+            action['objectId'] = 'None'
+        action_str = 'Close %s' % action['objectId'].split('|')[0]
+    elif action['action'] == 'RotateByDegree':
+        action_str = 'RotateByDegree %d' % action['rotation']
+    elif action['action'] == 'LookByDegree':
+        action_str = 'LookByDegree %d' % action['rotation']
+    else:
+        action_str = action['action']
+    return action_str
 
 def get_object(object_id, metadata):
     for obj in metadata['objects']:

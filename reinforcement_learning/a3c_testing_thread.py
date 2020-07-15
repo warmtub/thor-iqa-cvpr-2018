@@ -45,21 +45,23 @@ class A3CTestingThread(object):
 
         print('Resetting')
         ns = os.path.join(constants.LOGS_PATH, str(time.time()))
+        detection_path = os.path.join(ns, 'detection')
         image_path = os.path.join(ns, 'images')
         map_path = os.path.join(ns, 'maps')
         if not os.path.exists(ns):
             os.mkdir(ns)
+            os.mkdir(detection_path)
             os.mkdir(image_path)
             os.mkdir(map_path)
-        action_file = open(os.path.join(ns, "action.txt"), "w") 
+        action_file = open(os.path.join(ns, "action.txt"), "a") 
 
         self.prev_action = {'action' : 'Reset'}
         self.agent.reset(seed=test_ind[0], test_ind=test_ind)
         print('Here we go')
         while not terminal and self.agent.num_steps <= constants.MAX_EPISODE_LENGTH:
             self.local_t += 1
-            if (self.agent.num_steps % 100) == 0:
-                print("TIMESTEP", self.agent.num_steps)
+            #if (self.agent.num_steps % 100) == 0:
+            print("TIMESTEP", self.agent.num_steps)
             self.agent.inference()
 
             pi = self.agent.pi
@@ -87,8 +89,14 @@ class A3CTestingThread(object):
             self.agent.step(action_dict)
 
             cv2.imwrite(os.path.join(image_path, '%d.JPG'%self.local_t), self.agent.game_state.image)
+            from darknet_object_detection.detector import visualize_detections 
+            boxes, scores, classes = self.agent.game_state.object_detector.detect(self.agent.game_state.image)
+            detect_image = visualize_detections(self.agent.game_state.image, boxes, classes, scores)
+            cv2.imwrite(os.path.join(detection_path, '%d.JPG'%self.local_t), detect_image)
+            #np.save(os.path.join(image_path, '%d.npy'%self.local_t), self.agent.game_state.image)
             np.save(os.path.join(map_path, '%d.npy'%self.local_t), self.agent.game_state.graph.memory)
-            action_file.write('%s\n'%game_util.get_action_str_full(action_dict))
+            with open(os.path.join(ns, "action.txt"), "a") as action_file:
+                action_file.write('%s\n'%game_util.get_action_str_full(action_dict))
 
             reward, terminal = self.agent.get_reward()
 
@@ -100,7 +108,6 @@ class A3CTestingThread(object):
                 print('terminal', terminal)
 
             episode_reward += reward
-        action_file.close()
 
         if constants.DRAWING:
             self.agent.inference()

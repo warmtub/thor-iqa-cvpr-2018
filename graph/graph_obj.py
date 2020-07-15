@@ -15,6 +15,10 @@ EPSILON = 1e-7
 class Graph(object):
     def __init__(self, gt_source_file, use_gt=False, construct_graph=True):
         self.points = (np.load(gt_source_file)).astype(int) # / constants.AGENT_STEP_SIZE
+        self.Txmin = 5
+        self.Txmax = 11
+        self.Tymin = 5
+        self.Tymax = 9
 
         """
         #print (np.load(gt_source_file))

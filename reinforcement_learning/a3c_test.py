@@ -94,7 +94,7 @@ def main():
     out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction, union, inter, max, early_stop\n')
     #out_file.write('question_type, answer_correct, answer, gt_answer, episode_length, invalid_action_percent, scene number, seed, required_interaction\n')
 
-    qtype = 0
+    qtype = 1
     qobj = 'Apple'
     qcon = 'Fridge'
     qobj_idx = constants.OBJECTS.index(qobj)

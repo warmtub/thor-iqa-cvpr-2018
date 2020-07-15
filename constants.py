@@ -106,7 +106,8 @@ elif TASK == 'rl':
     RL = True
     SUPERVISED = False
     MAX_TIME_STEP = int(1e9)
-    MAX_EPISODE_LENGTH = 1000
+    #MAX_EPISODE_LENGTH = 1000
+    MAX_EPISODE_LENGTH = 200
     END_TO_END_BASELINE = False
     NUM_UNROLLS = 12
     BATCH_SIZE = 3 if DEBUG else 8
@@ -377,7 +378,7 @@ FREQ_TH = 0.8
 LAYOUT_FILE = 'layouts/Lab01-layout.npy'
 AGENT_HEIGHT = 0.0
 #START_POSE = (6, 6, 0)
-NO_MASTER = True
+NO_MASTER = False
 ORIGIN_POSE = [1.26, 1.48]
 LOGS_PATH = 'thesis_logs'
 ## SCENE_PADDING?

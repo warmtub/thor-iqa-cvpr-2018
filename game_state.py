@@ -98,7 +98,7 @@ class GameState(object):
         #self.s_t_orig = self.image
         #self.s_t = self.image
         if NO_MASTER:
-            image = PILImage.open('fake.JPG')
+            image = PILImage.open('74.JPG')
             self.image = asarray(image)
             self.pose = (5, 5, 0, 45)
             self.camera_pose = np.array([0, 0, 0])
@@ -136,7 +136,7 @@ class GameState(object):
 
         if (constants.GT_OBJECT_DETECTION or constants.OBJECT_DETECTION or
                 (constants.END_TO_END_BASELINE and constants.USE_OBJECT_DETECTION_AS_INPUT) and
-                not run_object_detection) and not constants.NO_MASTER:
+                not run_object_detection):
             if constants.OBJECT_DETECTION and not run_object_detection:
                 # Get detections.
 
@@ -146,13 +146,13 @@ class GameState(object):
                 #print(resp)
                 #boxes, scores, class_names = self.object_detector.detect(game_util.imresize(self.image, (608, 608), rescale=False))
                 boxes, scores, class_names = self.object_detector.detect(self.image)
-                #print("class_names\t", class_names)
+                print("class_names\t", class_names)
                 #print ("detection score: ", scores)
                 self.times[1, 0] += time.time() - t_start
                 self.times[1, 1] += 1
                 if self.times[1, 1] % 100 == 0:
                     print('detection time %.3f' % (self.times[1, 0] / self.times[1, 1]))
-                mask_dict = {}
+                #mask_dict = {}
                 used_inds = []
                 inds = list(range(len(boxes)))
                 for (ii, box, score, class_name) in zip(inds, boxes, scores, class_names):
@@ -715,6 +715,16 @@ class QuestionGameState(GameState):
                         done = self.move_srv(int(action['x']), int(action['z']), action['rotation'], 0)
                 else:
                     print ('huh?')
+                    new_x = min(max(int(action['x']), self.graph.Txmin), self.graph.Txmax)
+                    new_y = min(max(int(action['z']), self.graph.Tymin), self.graph.Tymax)
+                    print("new pose: ", new_x, new_y)
+                    print("curr pose", self.pose)
+                    
+                    if ((self.graph.points==[new_x, new_y]).all(axis=(1))).any() and (new_x-self.pose[0])**2+(new_y-self.pose[1])**2 > 4:
+                        done = False
+                        while not done:
+                            done = self.move_srv(new_x, new_y, action['rotation'], 0)                   
+
             if action['action'] == 'RotateRight':
                 right = (self.pose[2]+1)%4
                 self.rotate_srv(right)
@@ -722,7 +732,7 @@ class QuestionGameState(GameState):
                 left = (self.pose[2]-1)%4
                 self.rotate_srv(left)
             if action['action'] == 'LookUp':
-                angle = max(0, self.pose[3]-15)
+                angle = max(30, self.pose[3]-15)
                 self.view_pose_srv(angle)
             if action['action'] == 'LookDown':
                 angle = min(60, self.pose[3]+15)

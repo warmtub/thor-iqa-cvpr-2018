@@ -40,11 +40,11 @@ GT_OBJECT_DETECTION = False
 #USED_QUESTION_TYPES = {0, 1, 2}
 #USED_QUESTION_TYPES = {1,2}
 #USED_QUESTION_TYPES = {2}
-#USED_QUESTION_TYPES = {1}
-USED_QUESTION_TYPES = {0}
+USED_QUESTION_TYPES = {1}
+#USED_QUESTION_TYPES = {2}
 
-TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
-#TEST_SET = 'unseen_scenes_single'  # unseen_scenes, seen_scenes
+#TEST_SET = 'unseen_scenes'  # unseen_scenes, seen_scenes
+TEST_SET = 'unseen_scenes_single'  # unseen_scenes, seen_scenes
 
 PREDICT_DEPTH = not GT_OBJECT_DETECTION
 

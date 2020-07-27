@@ -347,7 +347,7 @@ class RLGraphAgent(QAAgent):
 
         if self.game_state.early_stop:
             print("Early stop triggered <<<<<<<<<<<<+")
-            #self.terminal = True
+            self.terminal = True
 
         if constants.DEBUG:
             print('coverage %.2f - (%.3f%%)  reward %.3f' % (float(self.coverage), float(self.coverage * 100.0 / self.max_coverage), self.reward))

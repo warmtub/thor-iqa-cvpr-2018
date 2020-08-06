@@ -21,26 +21,26 @@ args = parser.parse_args()
 
 for file in glob.glob(os.path.join(args.f, "*.npy")):
     print(file)
-    if "FloorPlan1" not in file: continue
+    #if "FloorPlan1" not in file: continue
     np_map = np.load(file)
-    fig, ax = plt.subplots(1, 1)
-    obj_id = 19
-    pcm = ax.pcolor(np_map[:,:,obj_id], cmap=plt.get_cmap('Reds'), vmin=-0, vmax=1)
+    #fig, ax = plt.subplots(1, 1)
+    #obj_id = 19
+    #pcm = ax.pcolor(np_map[:,:,obj_id], cmap=plt.get_cmap('Reds'), vmin=-0, vmax=1)
     #print(np_map[np_map[:,:,obj_id]>0])
     #ax.set_title(constants.OBJECTS[obj_id], fontsize=5)
-    ax.axis('off')
-    """
+    #ax.axis('off')
     fig, axs = plt.subplots(4, 5)
     for (plot_i, plot_j) in list(itertools.product("0123","01234")):
         #print (i, j)
         obj_id = (int(plot_i))*5+int(plot_j)+1
-        #if obj_id > 20: break
+        #if obj_id > 19: obj_id = 0
+        #if obj_id == 0: continue
         ax = axs[int(plot_i), int(plot_j)]
-        pcm = ax.pcolor(np_map[:,:,obj_id], cmap=plt.get_cmap('Reds'), vmin=-0, vmax=1)
+        pcm = ax.pcolor(np_map[:,:,obj_id+1], cmap=plt.get_cmap('Reds'), vmin=-0, vmax=1)
         ax.set_title(constants.OBJECTS[obj_id], fontsize=5)
         ax.axis('off')
         
-        
+        """
         sil = []
         
         mask = np.array(np.where(np_map[:,:,obj_id] > 0)).transpose()
@@ -73,9 +73,8 @@ for file in glob.glob(os.path.join(args.f, "*.npy")):
         centers = kmeans.cluster_centers_
         print(centers)
         pcm = ax.scatter(centers[:,1], centers[:,0], s = 1.0, alpha = 0.5)
-    """
         
-
+	"""
         
     #fig.tight_layout()
     #fig.colorbar(pcm, ax=axs[:])
@@ -86,6 +85,7 @@ for file in glob.glob(os.path.join(args.f, "*.npy")):
 
     #plt.show()
     plt.tight_layout()
-    plt.savefig("%s_%s.png" % (file.split('.')[0], constants.OBJECTS[obj_id]), dpi = 1000)
+    plt.savefig("%s.png" % (file.split('.')[0]), dpi = 1000)
+    print("%s.png" % (file.split('.')[0]), "saved")
     plt.close()
     #break
